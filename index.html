@@ -10,7 +10,7 @@
             margin: 20px;
             line-height: 1.6;
         }
-        h1, h2 {
+        h1, h2, h3 {
             color: #2c3e50;
         }
         .schedule-container {
@@ -21,7 +21,8 @@
         }
         table {
             border-collapse: collapse;
-            width: 100%;
+            width: auto;
+			min-width: 100%;
         }
         th, td {
             border: 1px solid #ddd;
@@ -79,13 +80,29 @@
             margin: 20px 0;
             font-weight: bold;
         }
+		@media(max-width: 768px){
+		.station-cell {
+			width: 80px;
+			min-width: 83px;
+			max-width: 260px;
+			white-space: normal;
+			word-break: break-word;
+        }
+		.schedule-container {
+			padding: 3px 3px;
+			font-size: 12px;
+		}
+		h1, h2 {
+			font-size: 14px;
+		}
+		}
     </style>
 </head>
 <body>
-    <h2>Расписание автобуса 324Ж</h1>
+    <h1>Расписание автобуса 324Ж</h1>
 
     <div class="direction-header">
-        <h3>Направление: Бронницы → Отдых</h2>
+        <h2>Направление: Бронницы → Отдых</h2>
     </div>
     
     <div class="schedule-container">
@@ -143,7 +160,7 @@
     </div>
 
     <div class="direction-header">
-        <h3>Направление: Отдых → Бронницы</h2>
+        <h2>Направление: Отдых → Бронницы</h2>
     </div>
     
     <div class="schedule-container">
