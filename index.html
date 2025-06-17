@@ -3,281 +3,661 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Расписание автобуса 324Ж</title>
+    <title>Расписание автобуса №324ж</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
-            line-height: 1.6;
+            margin: 10px;
+            padding: 0;
         }
-        h1, h2, h3 {
-            color: #2c3e50;
+        h1, h2 {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 1.2rem;
         }
         .schedule-container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        .schedule-table {
             overflow-x: auto;
-            margin-bottom: 20px;
+            width: calc(100% - 40px);
+            margin: 0 auto 20px;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 5px;
+            scroll-behavior: smooth;
         }
         table {
-            border-collapse: collapse;
             width: auto;
-			min-width: 100%;
+            min-width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 8px 12px;
             text-align: left;
-            white-space: nowrap;
+            vertical-align: top;
         }
         th {
             background-color: #f2f2f2;
             position: sticky;
             top: 0;
-            left: 0;
-            z-index: 2;
+            z-index: 10;
         }
-        .station-cell {
+        .stop-name {
             position: sticky;
             left: 0;
+            width: 120px;
+            min-width: 120px;
+            max-width: 120px;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
             background-color: white;
-            z-index: 1;
-			width: 260px;
-			min-width: 140px;
-			max-width: 260px;
-			white-space: normal;
-			word-break: break-word;
-			padding: 8px 12px;
+            z-index: 5;
+            cursor: pointer;
         }
-        .blac {
-            background-color: #f5f5f5;
-        }
-        .blac .station-cell {
-            background-color: #f5f5f5;
+        .time-column {
+            min-width: 70px;
+            text-align: center;
         }
         .past {
             color: #999;
         }
-        .pastt {
-            background-color: #eceabe;
-            font-weight: bold;
-        }
-        .current {
-            background-color: #fffacd;
-            font-weight: bold;
-        }
         .future {
             color: #2e8b57;
-			font-weight: bold;
         }
-        .direction-header {
-            margin-top: 0px;
-            padding: 0px;
-            background-color: #e6f7ff;
-            border-left: 4px solid #1890ff;
+        .recent-past {
+            color: #999;
+            background-color: rgba(210, 180, 0, 0.2);
         }
-        #current-time {
-            margin: 20px 0;
+        .near-future {
+            background-color: rgba(255, 235, 0, 0.2);
+            color: #2e8b57;
             font-weight: bold;
         }
-		@media(max-width: 768px){
-		.station-cell {
-			width: 70px;
-			min-width: 70px;
-			max-width: 260px;
-			white-space: normal;
-			word-break: break-word;
-			padding: 3px 3px;
-			font-size: 9px;
+        .time-header {
+            min-width: 70px;
+            text-align: center;
         }
-		.time-cell, .schedule-header, .headd {
-			padding: 3px 3px;
-			font-size: 10px;
-		}
-		h1, h2 {
-			font-size: 12px;
-		}
-		}
+        .highlight-column {
+            background-color: rgba(255, 235, 0, 0.5);
+            font-weight: bold;
+        }
+        .next-bus-info {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #2e8b57;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 100;
+            display: none;
+        }
+        @media (max-width: 480px) {
+            .stop-name {
+                width: 100px;
+                min-width: 100px;
+                max-width: 100px;
+                font-size: 0.9rem;
+                padding: 6px 8px;
+            }
+            .time-column, .time-header {
+                min-width: 35px;
+                max-width: 35px;
+                font-size: 0.9rem;
+                padding: 5px 2px;
+            }
+            th, td {
+                padding: 6px 8px;
+            }
+            .next-bus-info {
+                width: 90%;
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>Расписание автобуса 324Ж</h1>
-
-    <div class="direction-header">
-        <h2>Направление: Бронницы → Отдых</h2>
-    </div>
-    
     <div class="schedule-container">
-        <table id="schedule-to">
-            <thead>
-                <tr class="headd">
-                    <th>Остановка</th>
-                    <th>1</th>
-                    <th>2</th>
-                    <th>3</th>
-                    <th>4</th>
-                    <th>5</th>
-                    <th>6</th>
-                    <th>7</th>
-                    <th>8</th>
-                    <th>9</th>
-                    <th>10</th>
-                    <th>11</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td class="station-cell">Автостанция Бронницы</td><td class="time-cell">05:35</td><td class="time-cell">06:05</td><td class="time-cell">07:50</td><td class="time-cell">08:30</td><td class="time-cell">10:50</td><td class="time-cell">11:40</td><td class="time-cell">13:55</td><td class="time-cell">14:39</td><td class="time-cell">16:20</td><td class="time-cell">17:30</td><td class="time-cell">19:30</td></tr>
-                <tr><td class="station-cell">Хозяйственный магазин</td><td class="time-cell">05:37</td><td class="time-cell">06:07</td><td class="time-cell">07:52</td><td class="time-cell">08:32</td><td class="time-cell">10:52</td><td class="time-cell">11:42</td><td class="time-cell">13:57</td><td class="time-cell">14:41</td><td class="time-cell">16:22</td><td class="time-cell">17:32</td><td class="time-cell">19:32</td></tr>
-                <tr><td class="station-cell">Совхоз Бронницкий</td><td class="time-cell">05:38</td><td class="time-cell">06:08</td><td class="time-cell">07:53</td><td class="time-cell">08:33</td><td class="time-cell">10:53</td><td class="time-cell">11:43</td><td class="time-cell">13:58</td><td class="time-cell">14:42</td><td class="time-cell">16:23</td><td class="time-cell">17:33</td><td class="time-cell">19:33</td></tr>
-                <tr class="blac"><td class="station-cell">Военная часть №&nbsp63539</td><td class="time-cell">05:39</td><td class="time-cell">06:09</td><td class="time-cell">07:54</td><td class="time-cell">08:34</td><td class="time-cell">10:54</td><td class="time-cell">11:44</td><td class="time-cell">13:59</td><td class="time-cell">14:43</td><td class="time-cell">16:24</td><td class="time-cell">17:34</td><td class="time-cell">19:34</td></tr>
-                <tr><td class="station-cell">Нижнее Велино</td><td class="time-cell">05:41</td><td class="time-cell">06:11</td><td class="time-cell">07:56</td><td class="time-cell">08:36</td><td class="time-cell">10:56</td><td class="time-cell">11:46</td><td class="time-cell">14:01</td><td class="time-cell">14:45</td><td class="time-cell">16:26</td><td class="time-cell">17:36</td><td class="time-cell">19:36</td></tr>
-                <tr><td class="station-cell">Верхнее Велино</td><td class="time-cell">05:43</td><td class="time-cell">06:13</td><td class="time-cell">07:58</td><td class="time-cell">08:38</td><td class="time-cell">10:58</td><td class="time-cell">11:48</td><td class="time-cell">14:03</td><td class="time-cell">14:47</td><td class="time-cell">16:28</td><td class="time-cell">17:38</td><td class="time-cell">19:38</td></tr>
-                <tr class="blac"><td class="station-cell">Кривцы-1</td><td class="time-cell">05:45</td><td class="time-cell">06:15</td><td class="time-cell">08:00</td><td class="time-cell">08:40</td><td class="time-cell">11:00</td><td class="time-cell">11:50</td><td class="time-cell">14:05</td><td class="time-cell">14:49</td><td class="time-cell">16:30</td><td class="time-cell">17:40</td><td class="time-cell">19:40</td></tr>
-                <tr class="blac"><td class="station-cell">Кривцы-2</td><td class="time-cell">05:46</td><td class="time-cell">06:16</td><td class="time-cell">08:01</td><td class="time-cell">08:41</td><td class="time-cell">11:01</td><td class="time-cell">11:51</td><td class="time-cell">14:06</td><td class="time-cell">14:50</td><td class="time-cell">16:31</td><td class="time-cell">17:41</td><td class="time-cell">19:41</td></tr>
-                <tr><td class="station-cell">Тимонино</td><td class="time-cell">05:47</td><td class="time-cell">06:17</td><td class="time-cell">08:02</td><td class="time-cell">08:42</td><td class="time-cell">11:02</td><td class="time-cell">11:52</td><td class="time-cell">14:07</td><td class="time-cell">14:51</td><td class="time-cell">16:32</td><td class="time-cell">17:42</td><td class="time-cell">19:42</td></tr>
-                <tr><td class="station-cell">Тимонино - Баня</td><td class="time-cell">05:48</td><td class="time-cell">06:18</td><td class="time-cell">08:03</td><td class="time-cell">08:43</td><td class="time-cell">11:03</td><td class="time-cell">11:53</td><td class="time-cell">14:08</td><td class="time-cell">14:52</td><td class="time-cell">16:33</td><td class="time-cell">17:43</td><td class="time-cell">19:43</td></tr>
-                <tr class="blac"><td class="station-cell">Софьино (трасса)</td><td class="time-cell">05:50</td><td class="time-cell">06:20</td><td class="time-cell">08:05</td><td class="time-cell">08:45</td><td class="time-cell">11:05</td><td class="time-cell">11:55</td><td class="time-cell">14:10</td><td class="time-cell">14:54</td><td class="time-cell">16:35</td><td class="time-cell">17:45</td><td class="time-cell">19:45</td></tr>
-                <tr><td class="station-cell">Софьино, 16</td><td class="time-cell">05:52</td><td class="time-cell">06:22</td><td class="time-cell">08:07</td><td class="time-cell">08:47</td><td class="time-cell">11:07</td><td class="time-cell">11:57</td><td class="time-cell">14:12</td><td class="time-cell">14:56</td><td class="time-cell">16:37</td><td class="time-cell">17:47</td><td class="time-cell">19:47</td></tr>
-                <tr><td class="station-cell">Магазин</td><td class="time-cell">05:54</td><td class="time-cell">06:24</td><td class="time-cell">08:09</td><td class="time-cell">08:49</td><td class="time-cell">11:09</td><td class="time-cell">11:59</td><td class="time-cell">14:14</td><td class="time-cell">14:58</td><td class="time-cell">16:39</td><td class="time-cell">17:49</td><td class="time-cell">19:49</td></tr>
-                <tr><td class="station-cell">Улица Шаровка</td><td class="time-cell">05:56</td><td class="time-cell">06:26</td><td class="time-cell">08:11</td><td class="time-cell">08:51</td><td class="time-cell">11:11</td><td class="time-cell">12:01</td><td class="time-cell">14:16</td><td class="time-cell">15:00</td><td class="time-cell">16:41</td><td class="time-cell">17:51</td><td class="time-cell">19:51</td></tr>
-                <tr class="blac"><td class="station-cell">Паткино, 55</td><td class="time-cell">05:59</td><td class="time-cell">06:29</td><td class="time-cell">08:14</td><td class="time-cell">08:54</td><td class="time-cell">11:14</td><td class="time-cell">12:04</td><td class="time-cell">14:19</td><td class="time-cell">15:03</td><td class="time-cell">16:44</td><td class="time-cell">17:54</td><td class="time-cell">19:54</td></tr>
-                <tr><td class="station-cell">Шилово, 24</td><td class="time-cell">06:00</td><td class="time-cell">06:30</td><td class="time-cell">08:15</td><td class="time-cell">08:55</td><td class="time-cell">11:15</td><td class="time-cell">12:05</td><td class="time-cell">14:20</td><td class="time-cell">15:04</td><td class="time-cell">16:45</td><td class="time-cell">17:55</td><td class="time-cell">19:55</td></tr>
-                <tr class="blac"><td class="station-cell">Дурниха, 58А</td><td class="time-cell">06:03</td><td class="time-cell">06:33</td><td class="time-cell">08:18</td><td class="time-cell">08:58</td><td class="time-cell">11:18</td><td class="time-cell">12:08</td><td class="time-cell">14:23</td><td class="time-cell">15:07</td><td class="time-cell">16:48</td><td class="time-cell">17:58</td><td class="time-cell">19:58</td></tr>
-                <tr class="blac"><td class="station-cell">Дачный массив</td><td class="time-cell">06:04</td><td class="time-cell">06:34</td><td class="time-cell">08:19</td><td class="time-cell">08:59</td><td class="time-cell">11:19</td><td class="time-cell">12:09</td><td class="time-cell">14:24</td><td class="time-cell">15:08</td><td class="time-cell">16:49</td><td class="time-cell">17:59</td><td class="time-cell">19:59</td></tr>
-                <tr><td class="station-cell">Михайловская Слобода</td><td class="time-cell">06:07</td><td class="time-cell">06:37</td><td class="time-cell">08:22</td><td class="time-cell">09:02</td><td class="time-cell">11:22</td><td class="time-cell">12:12</td><td class="time-cell">14:27</td><td class="time-cell">15:11</td><td class="time-cell">16:52</td><td class="time-cell">18:02</td><td class="time-cell">20:02</td></tr>
-                <tr class="blac"><td class="station-cell">Совхоз имени Тельмана</td><td class="time-cell">06:09</td><td class="time-cell">06:39</td><td class="time-cell">08:24</td><td class="time-cell">09:04</td><td class="time-cell">11:24</td><td class="time-cell">12:14</td><td class="time-cell">14:29</td><td class="time-cell">15:13</td><td class="time-cell">16:54</td><td class="time-cell">18:04</td><td class="time-cell">20:04</td></tr>
-                <tr class="blac"><td class="station-cell">Чулково-1</td><td class="time-cell">06:10</td><td class="time-cell">06:40</td><td class="time-cell">08:25</td><td class="time-cell">09:05</td><td class="time-cell">11:25</td><td class="time-cell">12:15</td><td class="time-cell">14:30</td><td class="time-cell">15:14</td><td class="time-cell">16:55</td><td class="time-cell">18:05</td><td class="time-cell">20:05</td></tr>
-                <tr class="blac"><td class="station-cell">Чулково-2</td><td class="time-cell">06:11</td><td class="time-cell">06:41</td><td class="time-cell">08:26</td><td class="time-cell">09:06</td><td class="time-cell">11:26</td><td class="time-cell">12:16</td><td class="time-cell">14:31</td><td class="time-cell">15:16</td><td class="time-cell">16:56</td><td class="time-cell">18:06</td><td class="time-cell">20:06</td></tr>
-                <tr class="blac"><td class="station-cell">Новые дома</td><td class="time-cell">06:12</td><td class="time-cell">06:42</td><td class="time-cell">08:27</td><td class="time-cell">09:07</td><td class="time-cell">11:27</td><td class="time-cell">12:17</td><td class="time-cell">14:32</td><td class="time-cell">15:16</td><td class="time-cell">16:57</td><td class="time-cell">18:07</td><td class="time-cell">20:07</td></tr>
-                <tr><td class="station-cell">Улица Туполева</td><td class="time-cell">06:19</td><td class="time-cell">06:49</td><td class="time-cell">08:34</td><td class="time-cell">09:14</td><td class="time-cell">11:34</td><td class="time-cell">12:24</td><td class="time-cell">14:39</td><td class="time-cell">15:23</td><td class="time-cell">17:04</td><td class="time-cell">18:14</td><td class="time-cell">20:14</td></tr>
-                <tr><td class="station-cell">Площадь Громова (нет&nbspпосадки)</td><td class="time-cell">06:20</td><td class="time-cell">06:50</td><td class="time-cell">08:35</td><td class="time-cell">09:15</td><td class="time-cell">11:35</td><td class="time-cell">12:25</td><td class="time-cell">14:40</td><td class="time-cell">15:24</td><td class="time-cell">17:05</td><td class="time-cell">18:15</td><td class="time-cell">20:15</td></tr>
-                <tr><td class="station-cell">Площадь Громова</td><td class="time-cell">06:21</td><td class="time-cell">06:51</td><td class="time-cell">08:36</td><td class="time-cell">09:16</td><td class="time-cell">11:36</td><td class="time-cell">12:26</td><td class="time-cell">14:41</td><td class="time-cell">15:25</td><td class="time-cell">17:06</td><td class="time-cell">18:16</td><td class="time-cell">20:16</td></tr>
-                <tr><td class="station-cell">Улица Амет-хан Султана</td><td class="time-cell">06:22</td><td class="time-cell">06:52</td><td class="time-cell">08:37</td><td class="time-cell">09:17</td><td class="time-cell">11:37</td><td class="time-cell">12:27</td><td class="time-cell">14:42</td><td class="time-cell">15:26</td><td class="time-cell">17:07</td><td class="time-cell">18:17</td><td class="time-cell">20:17</td></tr>
-                <tr><td class="station-cell">Улица Чкалова</td><td class="time-cell">06:23</td><td class="time-cell">06:53</td><td class="time-cell">08:38</td><td class="time-cell">09:18</td><td class="time-cell">11:38</td><td class="time-cell">12:28</td><td class="time-cell">14:43</td><td class="time-cell">15:27</td><td class="time-cell">17:08</td><td class="time-cell">18:18</td><td class="time-cell">20:18</td></tr>
-                <tr><td class="station-cell">Улица Пушкина</td><td class="time-cell">06:25</td><td class="time-cell">06:55</td><td class="time-cell">08:40</td><td class="time-cell">09:20</td><td class="time-cell">11:40</td><td class="time-cell">12:30</td><td class="time-cell">14:45</td><td class="time-cell">15:29</td><td class="time-cell">17:10</td><td class="time-cell">18:20</td><td class="time-cell">20:20</td></tr>
-                <tr><td class="station-cell">Улица Семашко</td><td class="time-cell">06:27</td><td class="time-cell">06:57</td><td class="time-cell">08:42</td><td class="time-cell">09:22</td><td class="time-cell">11:42</td><td class="time-cell">12:32</td><td class="time-cell">14:47</td><td class="time-cell">15:31</td><td class="time-cell">17:12</td><td class="time-cell">18:22</td><td class="time-cell">20:22</td></tr>
-                <tr><td class="station-cell">МЦД Отдых (нет&nbspпосадки)</td><td class="time-cell">06:30</td><td class="time-cell">07:00</td><td class="time-cell">08:45</td><td class="time-cell">09:25</td><td class="time-cell">11:45</td><td class="time-cell">12:35</td><td class="time-cell">14:50</td><td class="time-cell">15:34</td><td class="time-cell">17:15</td><td class="time-cell">18:25</td><td class="time-cell">20:25</td></tr>
-            </tbody>
-        </table>
+        <h1>Расписание автобуса №324ж</h1>
+        
+        <h2>Бронницы → МЦД Отдых</h2>
+        <div class="schedule-table" id="forward-table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="stop-name">Остановка</th>
+                        <th class="time-header">1</th>
+                        <th class="time-header">2</th>
+                        <th class="time-header">3</th>
+                        <th class="time-header">4</th>
+                        <th class="time-header">5</th>
+                        <th class="time-header">6</th>
+                        <th class="time-header">7</th>
+                        <th class="time-header">8</th>
+                        <th class="time-header">9</th>
+                        <th class="time-header">10</th>
+                        <th class="time-header">11</th>
+                    </tr>
+                </thead>
+                <tbody id="forward-schedule"></tbody>
+            </table>
+        </div>
+        
+        <h2>МЦД Отдых → Бронницы</h2>
+        <div class="schedule-table" id="backward-table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="stop-name">Остановка</th>
+                        <th class="time-header">1</th>
+                        <th class="time-header">2</th>
+                        <th class="time-header">3</th>
+                        <th class="time-header">4</th>
+                        <th class="time-header">5</th>
+                        <th class="time-header">6</th>
+                        <th class="time-header">7</th>
+                        <th class="time-header">8</th>
+                        <th class="time-header">9</th>
+                        <th class="time-header">10</th>
+                        <th class="time-header">11</th>
+                    </tr>
+                </thead>
+                <tbody id="backward-schedule"></tbody>
+            </table>
+        </div>
     </div>
 
-    <div class="direction-header">
-        <h2>Направление: Отдых → Бронницы</h2>
-    </div>
-    
-    <div class="schedule-container">
-        <table id="schedule-from">
-            <thead>
-                <tr class="headd">
-                    <th>Остановка</th>
-                    <th>1</th>
-                    <th>2</th>
-                    <th>3</th>
-                    <th>4</th>
-                    <th>5</th>
-                    <th>6</th>
-                    <th>7</th>
-                    <th>8</th>
-                    <th>9</th>
-                    <th>10</th>
-                    <th>11</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td class="station-cell">Отдых</td><td class="time-cell">06:40</td><td class="time-cell">07:10</td><td class="time-cell">08:55</td><td class="time-cell">09:35</td><td class="time-cell">11:55</td><td class="time-cell">13:30</td><td class="time-cell">15:05</td><td class="time-cell">15:44</td><td class="time-cell">17:20</td><td class="time-cell">18:50</td><td class="time-cell">20:30</td></tr>
-                <tr><td class="station-cell">Школа № 8</td><td class="time-cell">06:41</td><td class="time-cell">07:11</td><td class="time-cell">08:56</td><td class="time-cell">09:36</td><td class="time-cell">11:56</td><td class="time-cell">13:31</td><td class="time-cell">15:06</td><td class="time-cell">15:45</td><td class="time-cell">17:21</td><td class="time-cell">18:51</td><td class="time-cell">20:31</td></tr>
-                <tr><td class="station-cell">Улица Жуковского</td><td class="time-cell">06:43</td><td class="time-cell">07:13</td><td class="time-cell">08:58</td><td class="time-cell">09:38</td><td class="time-cell">11:58</td><td class="time-cell">13:33</td><td class="time-cell">15:08</td><td class="time-cell">15:47</td><td class="time-cell">17:23</td><td class="time-cell">18:53</td><td class="time-cell">20:33</td></tr>
-                <tr><td class="station-cell">Больница</td><td class="time-cell">06:44</td><td class="time-cell">07:14</td><td class="time-cell">08:59</td><td class="time-cell">09:39</td><td class="time-cell">11:59</td><td class="time-cell">13:34</td><td class="time-cell">15:09</td><td class="time-cell">15:48</td><td class="time-cell">17:24</td><td class="time-cell">18:54</td><td class="time-cell">20:34</td></tr>
-                <tr><td class="station-cell">Улица Горького</td><td class="time-cell">06:45</td><td class="time-cell">07:15</td><td class="time-cell">09:00</td><td class="time-cell">09:40</td><td class="time-cell">12:00</td><td class="time-cell">13:35</td><td class="time-cell">15:10</td><td class="time-cell">15:49</td><td class="time-cell">17:25</td><td class="time-cell">18:55</td><td class="time-cell">20:35</td></tr>
-                <tr><td class="station-cell">Улица Пушкина</td><td class="time-cell">06:46</td><td class="time-cell">07:16</td><td class="time-cell">09:01</td><td class="time-cell">09:41</td><td class="time-cell">12:01</td><td class="time-cell">13:36</td><td class="time-cell">15:11</td><td class="time-cell">15:50</td><td class="time-cell">17:26</td><td class="time-cell">18:56</td><td class="time-cell">20:36</td></tr>
-                <tr><td class="station-cell">Улица Чкалова</td><td class="time-cell">06:48</td><td class="time-cell">07:18</td><td class="time-cell">09:03</td><td class="time-cell">09:43</td><td class="time-cell">12:03</td><td class="time-cell">13:38</td><td class="time-cell">15:13</td><td class="time-cell">15:52</td><td class="time-cell">17:28</td><td class="time-cell">18:58</td><td class="time-cell">20:38</td></tr>
-                <tr><td class="station-cell">Улица Амет-хан Султана</td><td class="time-cell">06:49</td><td class="time-cell">07:19</td><td class="time-cell">09:04</td><td class="time-cell">09:44</td><td class="time-cell">12:04</td><td class="time-cell">13:39</td><td class="time-cell">15:14</td><td class="time-cell">15:53</td><td class="time-cell">17:29</td><td class="time-cell">18:59</td><td class="time-cell">20:39</td></tr>
-                <tr><td class="station-cell">Площадь Громова</td><td class="time-cell">06:50</td><td class="time-cell">07:20</td><td class="time-cell">09:05</td><td class="time-cell">09:45</td><td class="time-cell">12:05</td><td class="time-cell">13:40</td><td class="time-cell">15:15</td><td class="time-cell">15:54</td><td class="time-cell">17:30</td><td class="time-cell">19:00</td><td class="time-cell">20:40</td></tr>
-                <tr><td class="station-cell">Улица Туполева</td><td class="time-cell">06:51</td><td class="time-cell">07:21</td><td class="time-cell">09:06</td><td class="time-cell">09:46</td><td class="time-cell">12:06</td><td class="time-cell">13:41</td><td class="time-cell">15:16</td><td class="time-cell">15:55</td><td class="time-cell">17:31</td><td class="time-cell">19:01</td><td class="time-cell">20:41</td></tr>
-                <tr class="blac"><td class="station-cell">Новые дома</td><td class="time-cell">06:59</td><td class="time-cell">07:29</td><td class="time-cell">09:14</td><td class="time-cell">09:54</td><td class="time-cell">12:14</td><td class="time-cell">13:49</td><td class="time-cell">15:24</td><td class="time-cell">16:03</td><td class="time-cell">17:39</td><td class="time-cell">19:09</td><td class="time-cell">20:49</td></tr>
-                <tr class="blac"><td class="station-cell">Чулково-2</td><td class="time-cell">07:00</td><td class="time-cell">07:30</td><td class="time-cell">09:15</td><td class="time-cell">09:55</td><td class="time-cell">12:15</td><td class="time-cell">13:50</td><td class="time-cell">15:25</td><td class="time-cell">16:04</td><td class="time-cell">17:40</td><td class="time-cell">19:10</td><td class="time-cell">20:50</td></tr>
-                <tr class="blac"><td class="station-cell">Чулково-1</td><td class="time-cell">07:01</td><td class="time-cell">07:31</td><td class="time-cell">09:16</td><td class="time-cell">09:56</td><td class="time-cell">12:16</td><td class="time-cell">13:51</td><td class="time-cell">15:26</td><td class="time-cell">16:05</td><td class="time-cell">17:41</td><td class="time-cell">19:11</td><td class="time-cell">20:51</td></tr>
-                <tr class="blac"><td class="station-cell">Совхоз имени Тельмана</td><td class="time-cell">07:03</td><td class="time-cell">07:33</td><td class="time-cell">09:18</td><td class="time-cell">09:58</td><td class="time-cell">12:18</td><td class="time-cell">13:53</td><td class="time-cell">15:28</td><td class="time-cell">16:07</td><td class="time-cell">17:43</td><td class="time-cell">19:13</td><td class="time-cell">20:53</td></tr>
-                <tr><td class="station-cell">Михайловская Слобода</td><td class="time-cell">07:04</td><td class="time-cell">07:34</td><td class="time-cell">09:19</td><td class="time-cell">09:59</td><td class="time-cell">12:19</td><td class="time-cell">13:54</td><td class="time-cell">15:29</td><td class="time-cell">16:08</td><td class="time-cell">17:44</td><td class="time-cell">19:14</td><td class="time-cell">20:54</td></tr>
-                <tr class="blac"><td class="station-cell">Дачный массив</td><td class="time-cell">07:07</td><td class="time-cell">07:37</td><td class="time-cell">09:22</td><td class="time-cell">10:02</td><td class="time-cell">12:22</td><td class="time-cell">13:57</td><td class="time-cell">15:32</td><td class="time-cell">16:11</td><td class="time-cell">17:47</td><td class="time-cell">19:17</td><td class="time-cell">20:57</td></tr>
-                <tr class="blac"><td class="station-cell">Поворот</td><td class="time-cell">07:07</td><td class="time-cell">07:37</td><td class="time-cell">09:22</td><td class="time-cell">10:02</td><td class="time-cell">12:22</td><td class="time-cell">13:57</td><td class="time-cell">15:32</td><td class="time-cell">16:11</td><td class="time-cell">17:47</td><td class="time-cell">19:17</td><td class="time-cell">20:57</td></tr>
-                <tr class="blac"><td class="station-cell">Дурниха, 58А</td><td class="time-cell">07:09</td><td class="time-cell">07:39</td><td class="time-cell">09:24</td><td class="time-cell">10:04</td><td class="time-cell">12:24</td><td class="time-cell">13:59</td><td class="time-cell">15:34</td><td class="time-cell">16:13</td><td class="time-cell">17:49</td><td class="time-cell">19:19</td><td class="time-cell">20:59</td></tr>
-                <tr><td class="station-cell">Шилово, 24</td><td class="time-cell">07:11</td><td class="time-cell">07:41</td><td class="time-cell">09:26</td><td class="time-cell">10:06</td><td class="time-cell">12:26</td><td class="time-cell">14:01</td><td class="time-cell">15:36</td><td class="time-cell">16:15</td><td class="time-cell">17:51</td><td class="time-cell">19:21</td><td class="time-cell">21:01</td></tr>
-                <tr class="blac"><td class="station-cell">Паткино, 55</td><td class="time-cell">07:13</td><td class="time-cell">07:43</td><td class="time-cell">09:28</td><td class="time-cell">10:08</td><td class="time-cell">12:28</td><td class="time-cell">14:03</td><td class="time-cell">15:38</td><td class="time-cell">16:17</td><td class="time-cell">17:53</td><td class="time-cell">19:23</td><td class="time-cell">21:03</td></tr>
-                <tr><td class="station-cell">Улица Шаровка</td><td class="time-cell">07:15</td><td class="time-cell">07:45</td><td class="time-cell">09:30</td><td class="time-cell">10:10</td><td class="time-cell">12:30</td><td class="time-cell">14:05</td><td class="time-cell">15:40</td><td class="time-cell">16:19</td><td class="time-cell">17:55</td><td class="time-cell">19:25</td><td class="time-cell">21:05</td></tr>
-                <tr><td class="station-cell">Магазин</td><td class="time-cell">07:17</td><td class="time-cell">07:47</td><td class="time-cell">09:32</td><td class="time-cell">10:12</td><td class="time-cell">12:23</td><td class="time-cell">14:07</td><td class="time-cell">15:42</td><td class="time-cell">16:21</td><td class="time-cell">17:57</td><td class="time-cell">19:27</td><td class="time-cell">21:07</td></tr>
-                <tr><td class="station-cell">Софьино, 16</td><td class="time-cell">07:19</td><td class="time-cell">07:49</td><td class="time-cell">09:34</td><td class="time-cell">10:14</td><td class="time-cell">12:34</td><td class="time-cell">14:09</td><td class="time-cell">15:44</td><td class="time-cell">16:23</td><td class="time-cell">17:59</td><td class="time-cell">19:29</td><td class="time-cell">21:09</td></tr>
-                <tr><td class="station-cell">РЦ Перекрёсток</td><td class="time-cell">07:21</td><td class="time-cell">07:51</td><td class="time-cell">09:36</td><td class="time-cell">10:16</td><td class="time-cell">12:36</td><td class="time-cell">14:11</td><td class="time-cell">15:46</td><td class="time-cell">16:25</td><td class="time-cell">18:01</td><td class="time-cell">19:31</td><td class="time-cell">21:11</td></tr>
-                <tr class="blac"><td class="station-cell">Софьино (трасса)</td><td class="time-cell">07:22</td><td class="time-cell">07:52</td><td class="time-cell">09:37</td><td class="time-cell">10:17</td><td class="time-cell">12:37</td><td class="time-cell">14:12</td><td class="time-cell">15:47</td><td class="time-cell">16:26</td><td class="time-cell">18:02</td><td class="time-cell">19:32</td><td class="time-cell">21:12</td></tr>
-                <tr><td class="station-cell">Тимонино — Баня</td><td class="time-cell">07:25</td><td class="time-cell">07:55</td><td class="time-cell">09:40</td><td class="time-cell">10:20</td><td class="time-cell">12:40</td><td class="time-cell">14:15</td><td class="time-cell">15:50</td><td class="time-cell">16:29</td><td class="time-cell">18:05</td><td class="time-cell">19:35</td><td class="time-cell">21:15</td></tr>
-                <tr><td class="station-cell">Тимонино</td><td class="time-cell">07:26</td><td class="time-cell">07:56</td><td class="time-cell">09:41</td><td class="time-cell">10:21</td><td class="time-cell">12:41</td><td class="time-cell">14:16</td><td class="time-cell">15:51</td><td class="time-cell">16:30</td><td class="time-cell">18:06</td><td class="time-cell">19:36</td><td class="time-cell">21:16</td></tr>
-                <tr class="blac"><td class="station-cell">Кривцы-2</td><td class="time-cell">07:27</td><td class="time-cell">07:57</td><td class="time-cell">09:42</td><td class="time-cell">10:22</td><td class="time-cell">12:42</td><td class="time-cell">14:17</td><td class="time-cell">15:52</td><td class="time-cell">16:31</td><td class="time-cell">18:07</td><td class="time-cell">19:37</td><td class="time-cell">21:17</td></tr>
-                <tr class="blac"><td class="station-cell">Кривцы-1</td><td class="time-cell">07:28</td><td class="time-cell">07:58</td><td class="time-cell">09:43</td><td class="time-cell">10:23</td><td class="time-cell">12:43</td><td class="time-cell">14:18</td><td class="time-cell">15:53</td><td class="time-cell">16:32</td><td class="time-cell">18:08</td><td class="time-cell">19:38</td><td class="time-cell">21:18</td></tr>
-                <tr><td class="station-cell">Верхнее Велино</td><td class="time-cell">07:30</td><td class="time-cell">08:00</td><td class="time-cell">09:45</td><td class="time-cell">10:25</td><td class="time-cell">12:45</td><td class="time-cell">14:20</td><td class="time-cell">15:55</td><td class="time-cell">16:34</td><td class="time-cell">18:10</td><td class="time-cell">19:40</td><td class="time-cell">21:20</td></tr>
-                <tr><td class="station-cell">Нижнее Велино</td><td class="time-cell">07:32</td><td class="time-cell">08:02</td><td class="time-cell">09:47</td><td class="time-cell">10:27</td><td class="time-cell">12:47</td><td class="time-cell">14:22</td><td class="time-cell">15:57</td><td class="time-cell">16:36</td><td class="time-cell">18:12</td><td class="time-cell">19:42</td><td class="time-cell">21:22</td></tr>
-                <tr class="blac"><td class="station-cell">Военная часть №&nbsp63539</td><td class="time-cell">07:33</td><td class="time-cell">08:03</td><td class="time-cell">09:48</td><td class="time-cell">10:28</td><td class="time-cell">12:48</td><td class="time-cell">14:23</td><td class="time-cell">15:58</td><td class="time-cell">16:37</td><td class="time-cell">18:13</td><td class="time-cell">19:43</td><td class="time-cell">21:23</td></tr>
-                <tr><td class="station-cell">Совхоз Бронницкий</td><td class="time-cell">07:35</td><td class="time-cell">08:05</td><td class="time-cell">09:50</td><td class="time-cell">10:30</td><td class="time-cell">12:50</td><td class="time-cell">14:25</td><td class="time-cell">16:00</td><td class="time-cell">16:39</td><td class="time-cell">18:15</td><td class="time-cell">19:45</td><td class="time-cell">21:25</td></tr>
-                <tr><td class="station-cell">Хозяйственный магазин</td><td class="time-cell">07:36</td><td class="time-cell">08:06</td><td class="time-cell">09:51</td><td class="time-cell">10:31</td><td class="time-cell">12:51</td><td class="time-cell">14:26</td><td class="time-cell">16:01</td><td class="time-cell">16:40</td><td class="time-cell">18:16</td><td class="time-cell">19:46</td><td class="time-cell">21:26</td></tr>
-                <tr><td class="station-cell">Автостанция Бронницы (нет&nbspпосадки)</td><td class="time-cell">07:38</td><td class="time-cell">08:08</td><td class="time-cell">09:53</td><td class="time-cell">10:33</td><td class="time-cell">12:53</td><td class="time-cell">14:28</td><td class="time-cell">16:03</td><td class="time-cell">16:42</td><td class="time-cell">18:18</td><td class="time-cell">19:48</td><td class="time-cell">21:28</td></tr>
-            </tbody>
-        </table>
-    </div>
+    <div class="next-bus-info" id="next-bus-info"></div>
 
     <script>
-        function updateTimeHighlight() {
+         const ROUTE_DATA = {
+            forward: {
+               name: "Маршрут №324: Бронницы → МЦД Отдых",
+                stops: [
+                {
+                    name: "Автостанция Бронницы",
+                    times: [
+                        "05:35", "06:05", "07:50", "08:30", "10:50", "11:40", "13:55", "14:39", "16:20", "17:30", "19:30"
+                    ]},{
+                    name: "Хозяйственны магазин",
+                    times: [
+                        "05:37", "06:07", "07:52", "08:32", "10:52", "11:42", "13:57", "14:41", "16:22", "17:32", "19:32"
+                    ]},{ 
+					name: "Совхоз Бронницкий",
+					times: [
+						"05:38", "06:08", "07:53", "08:33", "10:53", "11:43", "13:58", "14:42", "16:23", "17:33", "19:33"
+					]},{
+					name: "Военная часть № 63539",
+					times: [
+						"05:39", "06:09", "07:54", "08:34", "10:54", "11:44", "13:59", "14:43", "16:24", "17:34", "19:34"
+					]},{
+					name: "Нижнее Велино",
+					times: [
+						"05:41", "06:11", "07:56", "08:36", "10:56", "11:46", "14:01", "14:45", "16:26", "17:36", "19:36"
+					]},{
+					name: "Верхнее Велино",
+					times: [
+						"05:43", "06:13", "07:58", "08:38", "10:58", "11:48", "14:03", "14:47", "16:28", "17:38", "19:38"
+					]},{
+					name: "Кривцы-1",
+					times: [
+						"05:45", "06:15", "08:00", "08:40", "11:00", "11:50", "14:05", "14:49", "16:30", "17:40", "19:40"
+					]},{
+					name: "Кривцы-2",
+					times: [
+						"05:46", "06:16", "08:01", "08:41", "11:01", "11:51", "14:06", "14:50", "16:31", "17:41", "19:41"
+					]},{ 
+					name: "Тимонино",
+					times: [
+						"05:47", "06:17", "08:02", "08:42", "11:02", "11:52", "14:07", "14:51", "16:32", "17:42", "19:42"
+					]},{
+					name: "Тимонино-Баня",
+					times: [
+						"05:48", "06:18", "08:03", "08:43", "11:03", "11:53", "14:08", "14:52", "16:33", "17:43", "19:43"
+					]},{
+					name: "Софьино (трасса)",
+					times: [
+						"05:50", "06:20", "08:05", "08:45", "11:05", "11:55", "14:10", "14:54", "16:35", "17:45", "19:45"
+					]},{
+					name: "Софьино, 16",
+					times: [
+						"05:52", "06:22", "08:07", "08:47", "11:07", "11:57", "14:12", "14:56", "16:37", "17:47", "19:47"
+					]},{
+					name: "Магазин",
+					times: [
+						"05:54", "06:24", "08:09", "08:49", "11:09", "11:59", "14:14", "14:58", "16:39", "17:49", "19:49"
+					]},{
+					name: "Улица Шаровка",
+					times: [
+						"05:56", "06:26", "08:11", "08:51", "11:11", "12:01", "14:16", "15:00", "16:41", "17:51", "19:51"
+					]},{ 
+					name: "Паткино, 55",
+					times: [
+						"05:59", "06:29", "08:14", "08:54", "11:14", "12:04", "14:19", "15:03", "16:44", "17:54", "19:54"
+					]},{
+					name: "Шилово, 24",
+					times: [
+						"06:00", "06:30", "08:15", "08:55", "11:15", "12:05", "14:20", "15:04", "16:45", "17:55", "19:55"
+					]},{
+					name: "Дурниха, 58А",
+					times: [
+						"06:03", "06:33", "08:18", "08:58", "11:18", "12:08", "14:23", "15:07", "16:48", "17:58", "19:58"
+					]},{ 
+					name: "Дачный массив",
+					times: [
+						"06:04", "06:34", "08:19", "08:59", "11:19", "12:09", "14:24", "15:08", "16:49", "17:59", "19:59"
+					]},{
+					name: "Михайловская Слобода",
+					times: [
+						"06:07", "06:37", "08:22", "09:02", "11:22", "12:12", "14:27", "15:11", "16:52", "18:02", "20:02"
+					]},{
+					name: "Совхоз имени Тельмана",
+					times: [
+						"06:09", "06:39", "08:24", "09:04", "11:24", "12:14", "14:29", "15:13", "16:54", "18:04", "20:04"
+					]},{
+					name: "Чулково-1",
+					times: [
+						"06:10", "06:40", "08:25", "09:05", "11:25", "12:15", "14:30", "15:14", "16:55", "18:05", "20:05"
+					]},{
+					name: "Чулково-2",
+					times: [
+						"06:11", "06:41", "08:26", "09:06", "11:26", "12:16", "14:31", "15:15", "16:56", "18:06", "20:06"
+					]},{ 
+					name: "Новые дома",
+					times: [
+						"06:12", "06:42", "08:27", "09:07", "11:27", "12:17", "14:32", "15:16", "16:57", "18:07", "20:07"
+					]},{ 
+					name: "Улица Туполева",
+					times: [
+						"06:19", "06:49", "08:34", "09:14", "11:34", "12:24", "14:39", "15:23", "17:04", "18:14", "20:14"
+					]},{
+					name: "Площадь Громова (НетПосадки)",
+					times: [
+						"06:20", "06:50", "08:35", "09:15", "11:35", "12:25", "14:40", "15:24", "17:05", "18:15", "20:15"
+					]},{ 
+					name: "Площадь Громова",
+					times: [
+						"06:21", "06:51", "08:36", "09:16", "11:36", "12:26", "14:41", "15:25", "17:06", "18:16", "20:16"
+					]},{
+					name: "Улица Амет-Хан Султана",
+					times: [
+						"06:22", "06:52", "08:37", "09:17", "11:37", "12:27", "14:42", "15:26", "17:07", "18:17", "20:17"
+					]},{
+					name: "Улица Чкалова",
+					times: [
+						"06:23", "06:53", "08:38", "09:18", "11:38", "12:28", "14:43", "15:27", "17:08", "18:18", "20:18"
+					]},{
+					name: "Улица Пушкина",
+					times: [
+						"06:25", "06:55", "08:40", "09:20", "11:40", "12:30", "14:45", "15:29", "17:10", "18:20", "20:20"
+					]},{
+					name: "Улица Семашко",
+					times: [
+						"06:27", "06:57", "08:42", "09:22", "11:42", "12:32", "14:47", "15:31", "17:12", "18:22", "20:22"
+					]},{
+					name: "МЦД Отдых",
+					times: [
+						"06:30", "07:00", "08:45", "09:25", "11:45", "12:35", "14:50", "15:34", "17:15", "18:25", "20:25"
+					]}
+                ]
+            },
+            backward: {
+                name: "Маршрут №324: МЦД Отдых → Бронницы",
+                stops: [
+				{ 
+					name: "МЦД Отдых",
+					times: [
+						"06:40", "07:10", "08:55", "09:35", "11:55", "13:30", "15:05", "15:44", "17:20", "18:50", "20:30"
+					]},{
+					name: "Школа №8",
+					times: [
+						"06:41", "07:11", "08:56", "09:36", "11:56", "13:31", "15:06", "15:45", "17:21", "18:51", "20:31"
+					]},{
+					name: "Улица Жуковского",
+					times: [
+						"06:43", "07:13", "08:58", "09:38", "11:58", "13:33", "15:08", "15:47", "17:23", "18:53", "20:33"
+					]},{
+					name: "Больница",
+					times: [
+						"06:44", "07:14", "08:59", "09:39", "11:59", "13:34", "15:09", "15:48", "17:24", "18:54", "20:34"
+					]},{
+					name: "Улица Горького",
+					times: [
+						"06:45", "07:15", "09:00", "09:40", "12:00", "13:35", "15:10", "15:49", "17:25", "18:55", "20:35"
+					]},{
+					name: "Улица Пушкина",
+					times: [
+						"06:46", "07:16", "09:01", "09:41", "12:01", "13:36", "15:11", "15:50", "17:26", "18:56", "20:36"
+					]},{
+					name: "Улица Чкалова",
+					times: [
+						"06:48", "07:18", "09:03", "09:43", "12:03", "13:38", "15:13", "15:52", "17:28", "18:58", "20:38"
+					]},{
+					name: "Улица Амет-Хан Султана",
+					times: [
+						"06:49", "07:19", "09:04", "09:44", "12:04", "13:39", "15:14", "15:53", "17:29", "18:59", "20:39"
+					]},{
+					name: "Площадь Громова",
+					times: [
+						"06:50", "07:20", "09:05", "09:45", "12:05", "13:40", "15:15", "15:54", "17:30", "19:00", "20:40"
+					]},{
+					name: "Улица Туполева",
+					times: [
+						"06:51", "07:21", "09:06", "09:46", "12:06", "13:41", "15:16", "15:55", "17:31", "19:01", "20:41"
+					]},{
+					name: "Новые дома",
+					times: [
+						"06:59", "07:29", "09:14", "09:54", "12:14", "13:49", "15:24", "16:03", "17:39", "19:09", "20:49"
+					]},{ 
+					name: "Чулково-2",
+					times: [
+						"07:00", "07:30", "09:15", "09:55", "12:15", "13:50", "15:25", "16:04", "17:40", "19:10", "20:50"
+					]},{
+					name: "Чулково-1",
+					times: [
+						"07:01", "07:31", "09:16", "09:56", "12:16", "13:51", "15:26", "16:05", "17:41", "19:11", "20:51"
+					]},{
+					name: "Совхоз имени Тельмана",
+					times: [
+						"07:03", "07:33", "09:18", "09:56", "12:18", "13:53", "15:28", "16:07", "17:43", "19:13", "20:53"
+					]},{
+					name: "Михайловская Слобода",
+					times: [
+						"07:04", "07:34", "09:19", "09:59", "12:19", "13:54", "15:29", "16:08", "17:44", "19:14", "20:54"
+					]},{
+					name: "Дачный массив",
+					times: [
+						"07:07", "07:37", "09:22", "10:02", "12:22", "13:57", "15:32", "16:11", "17:47", "19:17", "20:57"
+					]},{
+					name: "Поворот",
+					times: [
+						"07:08", "07:38", "09:23", "10:03", "12:23", "13:58", "15:33", "16:12", "17:48", "19:18", "20:58"
+					]},{ 
+					name: "Дурниха, 58А",
+					times: [
+						"07:09", "07:39", "09:24", "10:04", "12:24", "13:59", "15:34", "16:13", "17:49", "19:19", "20:59"
+					]},{ 
+					name: "Шилово, 24",
+					times: [
+						"07:11", "07:41", "09:26", "10:06", "12:26", "14:01", "15:36", "16:15", "17:51", "19:21", "21:01"
+					]},{
+					name: "Паткино, 55",
+					times: [
+						"07:13", "07:43", "09:28", "10:08", "12:28", "14:03", "15:38", "16:17", "17:53", "19:23", "21:03"
+					]},{
+					name: "Улица Шаровка",
+					times: [
+						"07:15", "07:45", "09:30", "10:10", "12:30", "14:05", "15:40", "16:19", "17:55", "19:25", "21:05"
+					]},{ 
+					name: "Магазин",
+					times: [
+						"07:17", "07:47", "09:32", "10:12", "12:32", "14:07", "15:42", "16:21", "17:57", "19:27", "21:07"
+					]},{
+					name: "Софьино, 16",
+					times: [
+						"07:19", "07:49", "09:34", "10:14", "12:34", "14:09", "15:44", "16:23", "17:59", "19:29", "21:09"
+					]},{
+					name: "РЦ Перекресток",
+					times: [
+						"07:21", "07:51", "09:36", "10:16", "12:36", "14:11", "15:46", "16:25", "18:01", "19:31", "21:11"
+					]},{
+					name: "Софьино (трасса)",
+					times: [
+						"07:22", "07:52", "09:37", "10:17", "12:37", "14:12", "15:47", "16:26", "18:02", "19:32", "21:12"
+					]},{
+					name: "Тимонино-Баня",
+					times: [
+						"07:25", "07:55", "09:40", "10:20", "12:40", "14:15", "15:50", "16:29", "18:05", "19:35", "21:15"
+					]},{
+					name: "Тимонино",
+					times: [
+						"07:26", "07:56", "09:41", "10:21", "12:41", "14:16", "15:51", "16:30", "18:06", "19:36", "21:16"
+					]},{
+					name: "Кривцы-2",
+					times: [
+						"07:27", "07:57", "09:42", "10:22", "12:42", "14:17", "15:52", "16:31", "18:07", "19:37", "21:17"
+						]},{
+					name: "Кривцы-1",
+					times: [
+						"07:28", "07:58", "09:43", "10:23", "12:43", "14:18", "15:53", "16:32", "18:08", "19:38", "21:18"
+					]},{
+					name: "Верхнее Велино",
+					times: [
+						"07:30", "08:00", "09:45", "10:25", "12:45", "14:20", "15:55", "16:34", "18:10", "19:40", "21:20"
+					]},{
+					name: "Нижнее Велино",
+					times: [
+						"07:32", "08:02", "09:47", "10:27", "12:47", "14:22", "15:57", "16:36", "18:12", "19:42", "21:22"
+					]},{
+					name: "Военная часть № 63539",
+					times: [
+						"07:33", "08:03", "09:48", "10:28", "12:48", "14:23", "15:58", "16:37", "18:13", "19:43", "21:23"
+					]},{
+					name: "Совхоз Бронницкий",
+					times: [
+						"07:35", "08:05", "09:50", "10:30", "12:50", "14:25", "16:00", "16:39", "18:15", "19:45", "21:25"
+					]},{
+                    name: "Хозяйственны магазин",
+                    times: [
+                        "07:36", "08:06", "09:51", "10:31", "12:51", "14:26", "16:01", "16:40", "18:16", "19:46", "21:26"
+                    ]},{
+                    name: "Автостанция Бронницы",
+                    times: [
+                        "07:38", "08:08", "09:53", "10:33", "12:53", "14:28", "16:03", "16:42", "18:18", "19:48", "21:28"
+                    ]
+                }
+                ]
+            }
+        };
+
+        // Конфигурация прокрутки
+        const SCROLL_CONFIG = {
+            offset: -120,
+            highlightDuration: 10000,
+            checkInterval: 60000
+        };
+
+        // Функция для определения статуса времени
+        function getTimeStatus(timeStr) {
             const now = new Date();
-            const currentHours = now.getHours();
-            const currentMinutes = now.getMinutes();
-            const currentTime = currentHours * 60 + currentMinutes;
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const timeDate = new Date();
+            timeDate.setHours(hours, minutes, 0, 0);
             
-            // Обрабатываем обе таблицы
-            document.querySelectorAll('table[id^="schedule"]').forEach(table => {
-                const timeCells = table.querySelectorAll('td.time-cell');
+            const diffMinutes = (timeDate - now) / (1000 * 60);
+            
+            if (diffMinutes < -5) {
+                return 'past';
+            } else if (diffMinutes < 0) {
+                return 'recent-past';
+            } else if (diffMinutes <= 15) {
+                return 'near-future';
+            } else {
+                return 'future';
+            }
+        }
+
+        // Функция для создания строки расписания
+        function createScheduleRow(stop) {
+            const row = document.createElement('tr');
+            
+            const nameCell = document.createElement('td');
+            nameCell.className = 'stop-name';
+            nameCell.textContent = stop.name;
+            nameCell.addEventListener('click', () => showNextBusTime(stop));
+            row.appendChild(nameCell);
+            
+            stop.times.forEach((time, index) => {
+                const timeCell = document.createElement('td');
+                timeCell.className = 'time-column';
+                timeCell.textContent = time;
                 
-                timeCells.forEach(cell => {
-                    const timeStr = cell.textContent;
-                    if (!timeStr || timeStr === "(нет посадки)") return;
-                    
-                    const [hours, minutes] = timeStr.split(':').map(Number);
-                    const cellTime = hours * 60 + minutes;
-                    
-                    // Очищаем предыдущие классы
-                    cell.className = 'time-cell';
-                    
-                    // Определяем статус времени
-                    if (cellTime < currentTime - 5) { // Прошедшее время (с запасом 5 минут)
-                        cell.classList.add('past');
-                    } else if (cellTime >= currentTime - 5 && cellTime <= currentTime + 0) { // Текущее (+15 минут вперёд)
-                        cell.classList.add('pastt');
-                    } else if (cellTime >= currentTime - 0 && cellTime <= currentTime + 15) { // Текущее (+15 минут вперёд)
-                        cell.classList.add('current');
-                    } else { // Будущее
-                        cell.classList.add('future');
-                    }
-                });
+                const status = getTimeStatus(time);
+                timeCell.classList.add(status);
+                
+                row.appendChild(timeCell);
+            });
+            
+            return row;
+        }
+
+        // Функция для показа времени следующего автобуса
+        function showNextBusTime(stop) {
+            const now = new Date();
+            let nextTime = null;
+            let minDiff = Infinity;
+            
+            // Находим ближайшее будущее время
+            stop.times.forEach(timeStr => {
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                const timeDate = new Date();
+                timeDate.setHours(hours, minutes, 0, 0);
+                
+                const diff = timeDate - now;
+                
+                if (diff > 0 && diff < minDiff) {
+                    minDiff = diff;
+                    nextTime = timeStr;
+                }
+            });
+            
+            const infoElement = document.getElementById('next-bus-info');
+            
+            if (nextTime) {
+                const minutes = Math.round(minDiff / (1000 * 60));
+                const hoursText = Math.floor(minutes / 60) > 0 ? `${Math.floor(minutes / 60)} ч ` : '';
+                const minutesText = `${minutes % 60} мин`;
+                
+                infoElement.textContent = `"${stop.name}" Следующий автобус в ${nextTime} (через ${hoursText}${minutesText})`;
+                infoElement.style.display = 'block';
+                
+                // Скрываем сообщение через 10 секунд
+                setTimeout(() => {
+                    infoElement.style.display = 'none';
+                }, 20000);
+            } else {
+                infoElement.textContent = `Сегодня больше нет автобусов на "${stop.name}"`;
+                infoElement.style.display = 'block';
+                
+                setTimeout(() => {
+                    infoElement.style.display = 'none';
+                }, 10000);
+            }
+        }
+
+        // Функция для обновления времени
+        function updateTimes() {
+            document.querySelectorAll('.time-column').forEach(cell => {
+                const time = cell.textContent;
+                cell.classList.remove('past', 'future', 'recent-past', 'near-future');
+                
+                const status = getTimeStatus(time);
+                cell.classList.add(status);
             });
         }
-        
-        // Обновляем каждую минуту
-        setInterval(updateTimeHighlight, 60000);
-        
-        // Первый запуск
-        updateTimeHighlight();
-        
-        // Показываем текущее время на странице
-        function updateCurrentTime() {
+
+        // Функция для поиска ближайшего времени в таблице
+        function findNearestTimeInTable(tableId) {
             const now = new Date();
-            const timeString = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-            if (!document.getElementById('current-time')) {
-                const timeElement = document.createElement('div');
-                timeElement.id = 'current-time';
-                document.body.prepend(timeElement);
+            let minDiff = Infinity;
+            let nearestColumnIndex = -1;
+            const table = document.getElementById(tableId);
+            
+            if (!table || !table.rows.length) return null;
+
+            const headerRow = table.previousElementSibling.querySelector('tr');
+            const timeHeaders = headerRow.querySelectorAll('.time-header');
+            
+            for (let col = 0; col < timeHeaders.length; col++) {
+                for (let row = 0; row < table.rows.length; row++) {
+                    const cell = table.rows[row].cells[col + 1];
+                    if (!cell || !cell.textContent) continue;
+                    
+                    const timeStr = cell.textContent;
+                    const [hours, minutes] = timeStr.split(':').map(Number);
+                    const timeDate = new Date();
+                    timeDate.setHours(hours, minutes, 0, 0);
+                    
+                    const diff = timeDate - now;
+                    
+                    if (diff > 0 && diff < minDiff) {
+                        minDiff = diff;
+                        nearestColumnIndex = col;
+                    }
+                }
             }
-            document.getElementById('current-time').textContent = `Текущее время: ${timeString}`;
+            
+            return nearestColumnIndex >= 0 ? nearestColumnIndex : null;
         }
-        
-        setInterval(updateCurrentTime, 1000);
-        updateCurrentTime();
+
+        // Функция для прокрутки к столбцу в таблице
+        function scrollToColumn(tableContainerId, columnIndex) {
+            const tableContainer = document.getElementById(tableContainerId);
+            const table = tableContainer.querySelector('table');
+            const headerRow = table.querySelector('thead tr');
+            const timeHeader = headerRow.querySelectorAll('.time-header')[columnIndex];
+
+            if (!timeHeader) return;
+
+            headerRow.querySelectorAll('.time-header').forEach(h => h.classList.remove('highlight-column'));
+            timeHeader.classList.add('highlight-column');
+            setTimeout(() => timeHeader.classList.remove('highlight-column'), SCROLL_CONFIG.highlightDuration);
+
+            const containerRect = tableContainer.getBoundingClientRect();
+            const headerRect = timeHeader.getBoundingClientRect();
+
+            const scrollPosition = headerRect.left - containerRect.left + tableContainer.scrollLeft + SCROLL_CONFIG.offset;
+    
+            tableContainer.scrollTo({
+                left: scrollPosition,
+                behavior: 'smooth'
+            });
+        }
+
+        // Функция для обработки перемотки в таблице
+        function handleTableScroll(tableId, tableContainerId) {
+            const nearestColumn = findNearestTimeInTable(tableId);
+            if (nearestColumn !== null) {
+                scrollToColumn(tableContainerId, nearestColumn);
+            }
+        }
+
+        // Заполнение таблиц
+        function fillSchedules() {
+            const forwardTable = document.getElementById('forward-schedule');
+            const backwardTable = document.getElementById('backward-schedule');
+            
+            ROUTE_DATA.forward.stops.forEach(stop => {
+                forwardTable.appendChild(createScheduleRow(stop));
+            });
+            
+            ROUTE_DATA.backward.stops.forEach(stop => {
+                backwardTable.appendChild(createScheduleRow(stop));
+            });
+            
+            updateTimes();
+            handleTableScroll('forward-schedule', 'forward-table-container');
+            handleTableScroll('backward-schedule', 'backward-table-container');
+        }
+
+        // Инициализация при загрузке страницы
+        window.onload = function() {
+            fillSchedules();
+            
+            setInterval(updateTimes, 60000);
+            setInterval(() => {
+                handleTableScroll('forward-schedule', 'forward-table-container');
+                handleTableScroll('backward-schedule', 'backward-table-container');
+            }, SCROLL_CONFIG.checkInterval);
+        };
     </script>
 </body>
 </html>
