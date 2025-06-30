@@ -61,7 +61,7 @@
             cursor: pointer;
         }
         .time-column {
-            min-width: 70px;
+            min-width: 50px;
             text-align: center;
         }
         .past {
@@ -80,7 +80,6 @@
             font-weight: bold;
         }
         .time-header {
-            min-width: 70px;
             text-align: center;
         }
         .highlight-column {
@@ -108,10 +107,10 @@
 		}
         @media (max-width: 480px) {
             .stop-name {
-                width: 100px;
-                min-width: 100px;
+                width: 70px;
+                min-width: 70px;
                 max-width: 100px;
-                font-size: 0.9rem;
+                font-size: 0.7rem;
                 padding: 6px 8px;
             }
             .time-column, .time-header {
@@ -464,13 +463,22 @@
             }
         };
 
-        // Конфигурация прокрутки
-        const SCROLL_CONFIG = {
-            offset: -120,
-            highlightDuration: 10000,
-            checkInterval: 60000
-        };
-
+       // Конфигурация прокрутки с динамическим offset
+		const SCROLL_CONFIG = {
+			get offset() {
+				if (window.innerWidth < 480) {
+					return -100; 
+				} else if (window.innerWidth < 768) {
+					return -170; 
+				} else if (window.innerWidth < 1024) {
+					return -160; 
+				} else {
+					return -150; 
+				}
+			},
+			highlightDuration: 10000,
+			checkInterval: 60000
+		};
         // Функция для определения статуса времени
 		function getTimeStatus(timeStr) {
 			const now = new Date();
@@ -657,15 +665,26 @@
         }
 
         // Инициализация при загрузке страницы
-        window.onload = function() {
-            fillSchedules();
-            
-            setInterval(updateTimes, 1000);
-            setInterval(() => {
-                handleTableScroll('forward-schedule', 'forward-table-container');
-                handleTableScroll('backward-schedule', 'backward-table-container');
-            }, SCROLL_CONFIG.checkInterval);
-        };
+window.onload = function() {
+    fillSchedules();
+    
+    setInterval(updateTimes, 1000);
+    setInterval(() => {
+        handleTableScroll('forward-schedule', 'forward-table-container');
+        handleTableScroll('backward-schedule', 'backward-table-container');
+    }, SCROLL_CONFIG.checkInterval);
+    
+    // Обработчик изменения размера окна с задержкой
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            handleTableScroll('forward-schedule', 'forward-table-container');
+            handleTableScroll('backward-schedule', 'backward-table-container');
+        }, 200);
+    });
+};
+
     </script>
 </body>
 </html>

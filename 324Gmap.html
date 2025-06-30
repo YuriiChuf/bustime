@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Маршрут №324 - Текущее положение автобусов</title>
+    <title>Маршрут №324Ж - Текущее положение автобусов</title>
     <style>
         /* Основные стили */
         body {
@@ -23,6 +23,7 @@
         }
         
         h1 {
+			font-size: 18px;
             color: #333;
             text-align: center;
             margin-bottom: 30px;
@@ -77,14 +78,14 @@
         /* Стили автобусов */
         .bus {
             position: absolute;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+            border-radius: 10%;
             transform: translate(-50%, -50%);
             z-index: 10;
             box-shadow: 0 0 5px rgba(0,0,0,0.7);
             pointer-events: none;
-            background-color: rgba(225, 219, 88, 0.8);
+            background-color: rgba(225, 219, 88, 1);
         }
         
         .forward-bus {
@@ -152,47 +153,79 @@
         
         /* Стили информации об остановке */
         .stop-info {
-            position: absolute;
-            font-size: 12px;
-            background-color: rgba(255, 255, 255, 0.95);
-            padding: 6px 8px;
-            border-radius: 4px;
-            white-space: normal;
-            max-width: 250px;
-            overflow: auto;
-            text-overflow: ellipsis;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-            z-index: 20;
-            pointer-events: none;
-            display: none;
-        }
-        
-        .desktop.forward-info {
+            position: absolute !important;
+            background-color: rgba(255, 255, 255, 0.95) !important;
+            padding: 10px !important;
+            border-radius: 8px !important;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2) !important;
+            z-index: 30 !important;
+            max-width: 250px !important;
+            pointer-events: auto !important;
             transform: none !important;
+            margin: 10px !important;
         }
-        
-        .desktop.backward-info {
-            transform: none !important;
+
+        .stop-info.forward-info {
+            font-size: calc(10px + 0.5vw) !important;
+            top: 40% !important;
+            left: 55% !important;
+            width: auto !important;
+			max-width: 50% !important;
+			background-color: #e6f7ff;
+			border: 1px solid #91d5ff;
         }
-        
-        .mobile.forward-info {
-            transform: translate(10%, -100%);
-        }
-        
-        .mobile.backward-info {
-            transform: translate(10%, 100%);
-        }
-        
-        .stop-time {
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .stop-eta {
-            color: #27ae60;
-            font-size: 11px;
-        }
-        
+
+        .stop-info.backward-info {
+            font-size: calc(10px + 0.5vw) !important;
+            left: 6% !important;
+            top: 66% !important;
+            width: auto !important;
+			max-width: 50% !important;
+			background-color: #fff7e6;
+			border: 1px solid #9b59b6;
+		}
+		/* Заголовок маршрута */
+		.stop-info .route-title {
+			font-weight: bold;
+			margin-bottom: 5px;
+			text-align: center;
+			color: #333;
+		}
+
+		/* Разделитель между автобусами */
+		.stop-info .bus-separator {
+			margin: 5px 0;
+			border: none;
+			border-top: 1px dashed #ccc;
+		}
+
+		/* Блок информации об автобусе */
+		.stop-info .bus-info {
+			margin: 3px 0;
+		}
+
+		/* Название текущей/следующей остановки */
+		.stop-info .stop-time {
+			font-weight: 500;
+			color: #222;
+		}
+
+		/* Время прибытия */
+		.stop-info .stop-eta {
+			color: #666;
+			font-size: 0.9em;
+			margin-top: 2px;
+		}
+				
+		.arrow-line {
+			position: absolute;
+			height: 2px;
+			transform-origin: 0 50%;
+			background-color: black;
+			z-index: 100;
+		}
+		
+
         /* Стили панели расписания */
         .schedule-panel {
             position: absolute;
@@ -203,7 +236,7 @@
             border-radius: 8px;
             padding: 15px;
             box-shadow: 0 0 15px rgba(0,0,0,0.2);
-            z-index: 30;
+            z-index: 50;
             display: none;
         }
         
@@ -259,6 +292,17 @@
             color: #e67e22;
         }
         
+        /* Стили для стрелок */
+        .arrow-line {
+            position: absolute;
+            z-index: 25;
+            height: 2px;
+            background-color: rgba(0,0,0,0.3);
+            transform-origin: left center;
+            pointer-events: none;
+        }
+        
+        
         /* Медиа-запрос для мобильных устройств */
         @media (max-width: 768px) {
             .container {
@@ -274,7 +318,7 @@
             }
             
             h1 {
-                font-size: 15px;
+                font-size: 18px;
                 margin-bottom: 5px;
             }
             
@@ -290,16 +334,104 @@
             }
             
             .bus {
-                width: 10px;
-                height: 10px;
+                width: 7px;
+                height: 7px;
+            }
+            .stop-info.forward-info {
+                font-size: 17px;
+                top: 17% !important;
+                left: 55% !important;
+                width: 32% !important;
+            }
+
+            .stop-info.backward-info {
+                font-size: 17px;
+                bottom: 40% !important;
+                left: 0px !important;
+                right: auto !important;
+                top: auto !important;
+                width: 29% !important;
             }
             
-            .stop-info {
-                font-size: 10px;
-                max-width: 200px;
+            @media (max-width: 480px) {
+                h1 {
+                    font-size: 12px;
+                    margin-bottom: 5px;
+                }
+                
+                .real-time {
+                    font-size: 10px;
+                    text-align: left;
+                }
+                
+                .stop {
+                    width: 5px;
+                    height: 5px;
+                    border: 1px solid white;
+                }
+                
+                .bus {
+                    width: 5px;
+                    height: 5px;
+                }
+                
+                .forward-bus {
+                    border: 1px solid #3498db;
+                }
+                
+                .backward-bus {
+                    border: 1px solid #9b59b6;
+                }
+                
+                .schedule-panel {
+                    position: absolute;
+                    top: 1%;
+                    right: 1%;
+                    width: auto;
+                    bottom: 0;
+                    padding: 4px;
+                    font-size: 12px;
+                }
+                
+                .schedule-header {
+                    margin-bottom: 5px;
+                    padding-bottom: 4px;
+                }
+                
+                .schedule-title {
+                    font-size: 14px;
+                }
+                
+                .close-schedule {
+                    font-size: 16px;
+                }
+                
+                .schedule-item {
+                    margin: 2px 0;
+                    padding: 4px;
+                }
+                
+                .stop-eta {
+                    font-size: 6px;
+                }
+                .stop-info.forward-info {
+                    font-size: 11px;
+                    top: 16% !important;
+                    left: 53% !important;
+                    width: 30% !important;
+					bottom: auto !important;
+                }
+
+                .stop-info.backward-info {
+                    font-size: 11px;
+                    top: 60% !important;
+                    left: 0px !important;
+                    right: auto !important;
+					bottom: auto !important;
+                    width: 27% !important;
+                }
             }
-            
-            @media (max-width: 320px) {
+			            @media (max-width: 320px) {
                 h1 {
                     font-size: 8px;
                     margin-bottom: 5px;
@@ -317,8 +449,8 @@
                 }
                 
                 .bus {
-                    width: 15px;
-                    height: 1px;
+                    width: 3px;
+                    height: 3px;
                 }
                 
                 .forward-bus {
@@ -357,33 +489,23 @@
                     padding: 2px;
                 }
                 
-                .stop-info {
-                    font-size: 7px;
-                }
-                
                 .stop-eta {
                     font-size: 6px;
                 }
-                
-                .stop-info.mobile {
-                    position: fixed !important;
-                    transform: none !important;
-                    background-color: rgba(255, 255, 255, 0.80);
-                    padding: 10px;
-                    border-radius: 8px;
-                    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+                .stop-info.forward-info {
+                    font-size: 7px;
+                    top: 15% !important;
+                    left: 53% !important;
+                    width: 30% !important;
                 }
 
-                .stop-info.mobile.forward-info {
-                    top: 20% !important;
-                    left: 60% !important;
-                    right: 5px;
-                }
-
-                .stop-info.mobile.backward-info {
-                    top: 60% !important;
-                    left: 5px !important;
-                    right: 55% !important;
+                .stop-info.backward-info {
+                    font-size: 7px;
+                    bottom: 0px !important;
+                    left: 0px !important;
+                    right: auto !important;
+                    top: auto !important;
+                    width: 27% !important;
                 }
             }
         }
@@ -391,7 +513,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Текущее положение автобусов маршрута №324ж</h1>
+        <h1>Маршрут №324Ж - Текущее положение автобусов</h1>
         
         <div class="real-time" id="current-time"></div>
         
@@ -980,56 +1102,11 @@
                 this.nextStopInfo = { forward: [], backward: [] };
                 this.currentSchedule = null;
                 this.isMobile = window.innerWidth < 768;
+                this.arrows = []; // Массив для хранения стрелок
                 
                 this.init();
             }
-			
-            // Проверяет, не выходит ли элемент за границы SVG, и корректирует позицию
-			adjustInfoPosition(infoElement, x, y, direction) {
-				const svgRect = this.svg.getBoundingClientRect();
-				const viewBox = this.svg.viewBox.baseVal;
-				const infoWidth = 200; // Фиксированная ширина подсказки
-				const infoHeight = 50; // Фиксированная высота подсказки
-
-				// Преобразуем координаты в % от SVG (для удобства расчетов)
-				const xPercent = (x / svgRect.width) * 100;
-				const yPercent = (y / svgRect.height) * 100;
-
-				// Отступ от края SVG (в %)
-				const edgeMargin = 5; // 5% от ширины/высоты SVG
-
-				// Если подсказка выходит за правый край (forward)
-				if (direction === 'forward') {
-					if (xPercent + (infoWidth / svgRect.width * 100) > 100 - edgeMargin) {
-						// Прижимаем к правому краю
-						x = svgRect.width - infoWidth - (edgeMargin / 300 * svgRect.width);
-					} else {
-						// Оставляем стандартный отступ (10px)
-						x += 10;
-					}
-					// Двигаем только по вертикали (вверх)
-					y -= 100;
-					// Проверяем, не выходит ли подсказка за верхний край
-					if (y < 0) y = 0;
-				}
-
-				// Если подсказка выходит за левый край (backward)
-				else if (direction === 'backward') {
-					if (xPercent - (infoWidth / svgRect.width * 100) < edgeMargin) {
-						// Прижимаем к левому краю
-						x = edgeMargin / 100 * svgRect.width;
-					} else {
-						// Оставляем стандартный отступ (-100%)
-						x -= infoWidth * 1;
-					}
-					// Двигаем только по вертикали (вниз)
-					y += 50;
-					// Проверяем, не выходит ли подсказка за нижний край
-					if (y + infoHeight > svgRect.height) y = svgRect.height - infoHeight;
-				}
-
-				return { x, y };
-			}
+            
             init() {
                 this.setupLayout();
                 this.loadSVG().then(() => {
@@ -1049,71 +1126,88 @@
             }
             
             setupLayout() {
-                // Определяем мобильное устройство и настраиваем контейнер
                 this.isMobile = window.innerWidth < 768;
                 this.mapWrapper.className = `map-wrapper ${this.isMobile ? 'mobile' : 'desktop'}`;
             }
-            
+
 			loadSVG() {
 				return new Promise((resolve) => {
-					// Полностью очищаем контейнер
+					// Удаляем старые элементы
 					this.mapContainer.innerHTML = '';
-
-					// Вставляем SVG первым (будет нижним слоем)
+					
+					// Вставляем новую SVG
 					this.mapContainer.insertAdjacentHTML('afterbegin', 
 						this.isMobile ? SVG_DATA.mobile : SVG_DATA.desktop);
 
-					// Создаем контейнер для элементов интерфейса
-					const overlayElements = document.createElement('div');
-					overlayElements.className = 'map-overlay-elements';
-					this.mapContainer.appendChild(overlayElements);
+					// Создаем контейнер для оверлеев
+					this.overlayElements = document.createElement('div');
+					this.overlayElements.className = 'map-overlay-elements';
+					this.mapContainer.appendChild(this.overlayElements);
 
-					// Восстанавливаем панель расписания
-					this.mapContainer.insertAdjacentHTML('beforeend', `
-						<div class="schedule-panel" id="schedule-panel">
-							<!-- содержимое панели -->
+					// Создаем панель расписания
+					this.schedulePanel = document.createElement('div');
+					this.schedulePanel.className = 'schedule-panel';
+					this.schedulePanel.id = 'schedule-panel';
+					this.schedulePanel.innerHTML = `
+						<div class="schedule-header">
+							<h3 class="schedule-title" id="schedule-title"></h3>
+							<button class="close-schedule" id="close-schedule">×</button>
 						</div>
-					`);
+						<div id="schedule-times"></div>
+						<div class="next-bus-info" id="next-bus-info"></div>
+					`;
+					this.mapContainer.appendChild(this.schedulePanel);
 
-					// Обновляем ссылки на элементы
+					// Получаем ссылки на элементы
 					this.svg = this.mapContainer.querySelector('svg');
 					this.forwardPath = document.getElementById('forward-path');
 					this.backwardPath = document.getElementById('backward-path');
-					this.overlayElements = overlayElements;
+					this.scheduleTitle = document.getElementById('schedule-title');
+					this.scheduleTimes = document.getElementById('schedule-times');
+					this.nextBusInfo = document.getElementById('next-bus-info');
+					this.closeScheduleBtn = document.getElementById('close-schedule');
 
+					// Очищаем кеш путей и пересчитываем
+					this.pathCache = { forward: [], backward: [] };
+					this.cachePathPoints();
+					
 					// Пересоздаем элементы остановок и автобусов
 					this.createStopElements();
 					this.createAllBusElements();
+					
+					// Обновляем позиции
+					this.updateAllPositions();
 
 					resolve();
 				});
 			}
             
-            setupEventListeners() {
-                window.addEventListener('resize', () => {
-                    const newIsMobile = window.innerWidth < 768;
-                    if (newIsMobile !== this.isMobile) {
-                        this.isMobile = newIsMobile;
-                        this.setupLayout();
-                        this.loadSVG().then(() => {
-                            this.cachePathPoints();
-                            this.updateAllPositions();
-                        });
-                    } else {
-                        this.updateAllPositions();
-                    }
-                });
-                
-                this.closeScheduleBtn.addEventListener('click', () => {
-                    this.hideSchedule();
-                });
-                
-                document.getElementById('combined-map').addEventListener('click', (e) => {
-                    if (e.target === document.getElementById('combined-map')) {
-                        this.hideSchedule();
-                    }
-                });
-            }
+			 setupEventListeners() {
+				window.addEventListener('resize', () => {
+					const newIsMobile = window.innerWidth < 768;
+					if (newIsMobile !== this.isMobile) {
+						this.isMobile = newIsMobile;
+						this.setupLayout();
+						this.loadSVG().then(() => {
+							this.cachePathPoints();
+							this.updateAllPositions();
+						});
+					} else {
+						// Если ориентация не изменилась, просто обновляем позиции
+						this.updateAllPositions();
+					}
+				});
+				
+				this.closeScheduleBtn.addEventListener('click', () => {
+					this.hideSchedule();
+				});
+				
+				document.getElementById('combined-map').addEventListener('click', (e) => {
+					if (e.target === document.getElementById('combined-map')) {
+						this.hideSchedule();
+					}
+				});
+			}
             
             updateAllPositions() {
                 this.updateStopPositions();
@@ -1139,47 +1233,45 @@
                 this.pathCache.backward = cachePath(this.backwardPath);
             }
             
-			createStopElements() {
-				const createStops = (direction) => {
-					// Удаляем только элементы остановок этого направления
-					document.querySelectorAll(`.stop.${direction}-stop`).forEach(el => el.remove());
-					document.querySelectorAll(`.stop-label`).forEach(el => {
-						if (el.previousElementSibling && el.previousElementSibling.classList.contains(`${direction}-stop`)) {
-							el.remove();
-						}
-					});
+            createStopElements() {
+                const createStops = (direction) => {
+                    document.querySelectorAll(`.stop.${direction}-stop`).forEach(el => el.remove());
+                    document.querySelectorAll(`.stop-label`).forEach(el => {
+                        if (el.previousElementSibling && el.previousElementSibling.classList.contains(`${direction}-stop`)) {
+                            el.remove();
+                        }
+                    });
 
-					ROUTE_DATA[direction].stops.forEach((stop, index) => {
-						if (stop.hidden || stop.isWaypoint) return;
+                    ROUTE_DATA[direction].stops.forEach((stop, index) => {
+                        if (stop.hidden) return;
 
-						const stopElement = document.createElement('div');
-						stopElement.className = `stop ${direction}-stop`;
-						stopElement.id = `${direction}-stop-${index}`;
+                        const stopElement = document.createElement('div');
+                        stopElement.className = `stop ${direction}-stop`;
+                        stopElement.id = `${direction}-stop-${index}`;
+                        stopElement.dataset.direction = direction;
+                        stopElement.dataset.index = index;
 
-						const label = document.createElement('div');
-						label.className = 'stop-label';
-						label.textContent = stop.name;
+                        const label = document.createElement('div');
+                        label.className = 'stop-label';
+                        label.textContent = stop.name;
 
-						// Добавляем элементы в overlayElements
-						this.overlayElements.appendChild(stopElement);
-						this.overlayElements.appendChild(label);
+                        this.overlayElements.appendChild(stopElement);
+                        this.overlayElements.appendChild(label);
 
-						// обработчик события
-						stopElement.addEventListener('click', (e) => {
-							e.stopPropagation();
-							this.showSchedule(direction, index);
-						});
-					});
-				};
+                        stopElement.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            this.showSchedule(direction, index);
+                        });
+                    });
+                };
 
-				createStops('forward');
-				createStops('backward');
-			}
+                createStops('forward');
+                createStops('backward');
+            }
 
             createAllBusElements() {
                 const createBuses = (direction) => {
                     const mapContainer = document.getElementById('combined-map');
-                    // Удаляем старые автобусы
                     document.querySelectorAll(`.bus.${direction}-bus`).forEach(el => el.remove());
                     document.querySelectorAll(`#${direction}-stop-info`).forEach(el => el.remove());
                     
@@ -1196,7 +1288,6 @@
                         mapContainer.appendChild(bus);
                         this.buses[direction].push(bus);
                 
-                        // Создаем элемент с информацией о следующей остановке
                         const info = document.createElement('div');
                         info.className = 'stop-info';
                         info.id = `${direction}-stop-info-${i}`;
@@ -1219,38 +1310,264 @@
                 return now;
             }
             
-			updateStopPositions() {
-				const positionStop = (direction, index) => {
-					const stop = ROUTE_DATA[direction].stops[index];
-					const element = document.getElementById(`${direction}-stop-${index}`);
-					if (!element) return;
+            updateStopPositions() {
+                const positionStop = (direction, index) => {
+                    const stop = ROUTE_DATA[direction].stops[index];
+                    const element = document.getElementById(`${direction}-stop-${index}`);
+                    if (!element) return;
 
-					const svgRect = this.svg.getBoundingClientRect();
-					const viewBox = this.svg.viewBox.baseVal;
-					const point = this.getPointAtPercentage(direction, stop.position);
+                    const point = this.getPointAtPercentage(direction, stop.position);
+                    
+                    const svgRect = this.svg.getBoundingClientRect();
+                    const viewBox = this.svg.viewBox.baseVal;
+                    
+                    const x = (point.x / viewBox.width) * svgRect.width;
+                    const y = (point.y / viewBox.height) * svgRect.height;
 
-					// Простое позиционирование без дополнительных корректировок
-					const x = (point.x / viewBox.width) * svgRect.width;
-					const y = (point.y / viewBox.height) * svgRect.height;
+                    element.style.left = `${x}px`;
+                    element.style.top = `${y}px`;
 
-					element.style.left = `${x}px`;
-					element.style.top = `${y}px`;
+                    const label = element.nextElementSibling;
+                    if (label && label.classList.contains('stop-label')) {
+                        label.style.left = `${x}px`;
+                        label.style.top = `${y - 15}px`;
+                    }
+                };
 
-					// Позиционируем подсказку
-					const label = element.nextElementSibling;
-					if (label && label.classList.contains('stop-label')) {
-						label.style.left = `${x}px`;
-						label.style.top = `${y - 15}px`; // Поднимаем подсказку чуть выше точки
+                ['forward', 'backward'].forEach(direction => {
+                    ROUTE_DATA[direction].stops.forEach((stop, index) => {
+                        if (!stop.hidden) {
+                            positionStop(direction, index);
+                        }
+                    });
+                });
+            }
+            
+updateRoutePositions(direction) {
+    const now = new Date();
+    const currentSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    const route = ROUTE_DATA[direction];
+
+    // Удаляем старые стрелки для этого направления
+    this.clearArrows(direction);
+
+    // Скрываем все автобусы и подсказки этого направления
+    this.buses[direction].forEach(bus => bus.style.display = 'none');
+    this.nextStopInfo[direction].forEach(info => info.style.display = 'none');
+
+    let activeBuses = [];
+
+    for (let tripIndex = 0; tripIndex < route.stops[0].times.length; tripIndex++) {
+        const [depH, depM] = route.stops[0].times[tripIndex].split(':').map(Number);
+        const depSec = depH * 3600 + depM * 60;
+        const [arrH, arrM] = route.stops[route.stops.length-1].times[tripIndex].split(':').map(Number);
+        const arrSec = arrH * 3600 + arrM * 60;
+        
+        if (currentSec >= depSec && currentSec <= arrSec + 60) {
+            const bus = this.buses[direction][tripIndex];
+            bus.style.display = 'block';
+
+            let currentPosition = 0;
+            let currentStopName = "";
+            let nextStopInfo = null;
+            let isAtStop = false;
+
+            // Определяем текущую позицию автобуса (учитываем ВСЕ остановки)
+            for (let i = 0; i < route.stops.length; i++) {
+                const stop = route.stops[i];
+                const [stopH, stopM] = stop.times[tripIndex].split(':').map(Number);
+                const stopSec = stopH * 3600 + stopM * 60;
+                const stopDuration = stop.stopDuration || 20;
+                const stopEndSec = stopSec + stopDuration;
+
+                if (currentSec >= stopSec && currentSec < stopEndSec) {
+                    currentPosition = stop.position;
+                    // Показываем название только если остановка не скрыта
+                    currentStopName = stop.hidden ? "" : stop.name;
+                    isAtStop = true;
+                    
+                    // Находим следующую НЕ скрытую остановку для отображения
+                    let nextVisibleStopIndex = i + 1;
+                    while (nextVisibleStopIndex < route.stops.length && 
+                           route.stops[nextVisibleStopIndex].hidden === true) {
+                        nextVisibleStopIndex++;
+                    }
+                    
+                    if (nextVisibleStopIndex < route.stops.length) {
+                        const nextStop = route.stops[nextVisibleStopIndex];
+                        const [nextStopH, nextStopM] = nextStop.times[tripIndex].split(':').map(Number);
+                        const nextStopSec = nextStopH * 3600 + nextStopM * 60;
+                        nextStopInfo = {
+                            name: nextStop.name,
+                            arrivalTime: nextStop.times[tripIndex],
+                            minutesLeft: Math.ceil((nextStopSec - currentSec) / 60)
+                        };
+                    }
+                    break;
+                }
+                else if (i > 0 && currentSec >= (route.stops[i-1].times[tripIndex].split(':').map(Number).reduce((h,m) => h * 3600 + m * 60) + 
+                         (route.stops[i-1].stopDuration || 20)) && 
+                         currentSec < stopSec) {
+                    const prevStop = route.stops[i-1];
+                    const [prevStopH, prevStopM] = prevStop.times[tripIndex].split(':').map(Number);
+                    const prevStopEndSec = prevStopH * 3600 + prevStopM * 60 + 
+                                         (prevStop.stopDuration || 20);
+                    const progress = (currentSec - prevStopEndSec) / (stopSec - prevStopEndSec);
+                    currentPosition = prevStop.position + 
+                        (stop.position - prevStop.position) * progress;
+                    
+                    // Находим следующую НЕ скрытую остановку для отображения
+                    let nextVisibleStopIndex = i;
+                    while (nextVisibleStopIndex < route.stops.length && 
+                           route.stops[nextVisibleStopIndex].hidden === true) {
+                        nextVisibleStopIndex++;
+                    }
+                    
+                    if (nextVisibleStopIndex < route.stops.length) {
+                        const nextStop = route.stops[nextVisibleStopIndex];
+                        const [nextStopH, nextStopM] = nextStop.times[tripIndex].split(':').map(Number);
+                        const nextStopSec = nextStopH * 3600 + nextStopM * 60;
+                        nextStopInfo = {
+                            name: nextStop.name,
+                            arrivalTime: nextStop.times[tripIndex],
+                            minutesLeft: Math.ceil((nextStopSec - currentSec) / 60)
+                        };
+                    }
+                    break;
+                }
+            }
+            
+            // Позиционируем автобус
+            const point = this.getPointAtPercentage(direction, currentPosition);
+            const svgRect = this.svg.getBoundingClientRect();
+            const viewBox = this.svg.viewBox.baseVal;
+            
+            const x = (point.x / viewBox.width) * svgRect.width;
+            const y = (point.y / viewBox.height) * svgRect.height;
+            
+            bus.style.left = `${x}px`;
+            bus.style.top = `${y}px`;
+
+            // Сохраняем информацию об активном автобусе (только если есть что показать)
+            if ((nextStopInfo || (isAtStop && currentStopName)) && !(isAtStop && !currentStopName && !nextStopInfo)) {
+                activeBuses.push({
+                    isAtStop,
+                    currentStopName,
+                    nextStopInfo,
+                    x,
+                    y,
+                    direction
+                });
+            }
+        }
+    }
+
+    // Обрабатываем активные автобусы для этого направления
+    if (activeBuses.length > 0) {
+        // Используем первый элемент nextStopInfo для отображения объединенной информации
+        const mainInfo = this.nextStopInfo[direction][0];
+        mainInfo.style.display = 'block';
+        mainInfo.className = `stop-info ${direction}-info`;
+        
+        let content = `<div class="route-title">Маршрут ${direction === 'forward' ? 'Бронницы → МЦД Отдых' : 'МЦД Отдых → Бронницы'}</div>`;
+        
+        activeBuses.forEach((bus, index) => {
+            if (index > 0) content += '<hr class="bus-separator">';
+            
+            // Формируем информацию в зависимости от того, на остановке автобус или в пути
+            if (bus.isAtStop) {
+                if (bus.currentStopName) {
+                    // Автобус на видимой остановке
+                    content += `
+                        <div class="bus-info">
+                            <div class="stop-time">${bus.currentStopName}</div>
+                            <div class="stop-eta">${bus.nextStopInfo ? 
+                                `Следующая: ${bus.nextStopInfo.name} в ${bus.nextStopInfo.arrivalTime}` : 'Конечная'}</div>
+                        </div>
+                    `;
+                } else if (bus.nextStopInfo) {
+                    // Автобус на скрытой остановке, но есть следующая видимая
+                    content += `
+                        <div class="bus-info">
+                            <div class="stop-time">Следующая: ${bus.nextStopInfo.name}</div>
+                            <div class="stop-eta">Прибытие в ${bus.nextStopInfo.arrivalTime} (через ${bus.nextStopInfo.minutesLeft} мин)</div>
+                        </div>
+                    `;
+                }
+                // Если автобус на скрытой остановке и нет следующей видимой - не показываем
+            } else if (bus.nextStopInfo) {
+                // Автобус в пути к видимой остановке
+                content += `
+                    <div class="bus-info">
+                        <div class="stop-time">Следующая: ${bus.nextStopInfo.name}</div>
+                        <div class="stop-eta">Прибытие в ${bus.nextStopInfo.arrivalTime} (через ${bus.nextStopInfo.minutesLeft} мин)</div>
+                    </div>
+                `;
+            }
+        });
+
+        mainInfo.innerHTML = content;
+
+        // Скрываем остальные подсказки этого направления
+        for (let i = 1; i < this.nextStopInfo[direction].length; i++) {
+            this.nextStopInfo[direction][i].style.display = 'none';
+        }
+        
+        // Добавляем стрелки от подсказки к автобусам
+        activeBuses.forEach(bus => {
+            this.addArrow(mainInfo, bus.x, bus.y, direction);
+        });
+    } else {
+        // Скрываем все подсказки этого направления, если нет активных автобусов
+        this.nextStopInfo[direction].forEach(info => info.style.display = 'none');
+    }
+}
+			
+            // Метод для добавления стрелки от элемента к точке
+			addArrow(fromElement, toX, toY, direction) {
+				const fromRect = fromElement.getBoundingClientRect();
+				const mapRect = this.mapContainer.getBoundingClientRect();
+				
+				// Координаты центра элемента "from"
+				const fromX = fromRect.left + fromRect.width / 2 - mapRect.left;
+				const fromY = fromRect.top + fromRect.height / 2 - mapRect.top;
+				
+				// Координаты точки "to" уже относительно карты
+				const toXRel = toX;
+				const toYRel = toY;
+				
+				// Рассчитываем длину и угол стрелки
+				const dx = toXRel - fromX;
+				const dy = toYRel - fromY;
+				const length = Math.sqrt(dx * dx + dy * dy);
+				const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+				
+				// Создаем линию стрелки
+				const line = document.createElement('div');
+				line.className = 'arrow-line';
+				// Добавляем класс направления
+				line.classList.add(`${direction}-arrow`);
+				line.style.width = `${length}px`;
+				line.style.left = `${fromX}px`;
+				line.style.top = `${fromY}px`;
+				line.style.transform = `rotate(${angle}deg)`;
+				
+				// Добавляем элементы в контейнер карты
+				this.mapContainer.appendChild(line);
+				
+				// Сохраняем ссылки для последующего удаления
+				this.arrows.push(line);
+			}
+            
+            // Метод для удаления всех стрелок
+			clearArrows(direction) {
+				this.arrows.forEach(arrow => {
+					if (arrow.parentNode && arrow.classList.contains(`${direction}-arrow`)) {
+						arrow.parentNode.removeChild(arrow);
 					}
-				};
-
-				['forward', 'backward'].forEach(direction => {
-					ROUTE_DATA[direction].stops.forEach((stop, index) => {
-						if (!stop.hidden && !stop.isWaypoint) {
-							positionStop(direction, index);
-						}
-					});
 				});
+				// Удаляем только стрелки этого направления из массива
+				this.arrows = this.arrows.filter(arrow => !arrow.classList.contains(`${direction}-arrow`));
 			}
             
             updateBusPositions() {
@@ -1258,189 +1575,13 @@
                 this.updateRoutePositions('backward');
             }
 
-			updateRoutePositions(direction) {
-				const currentTime = new Date();
-				const currentSec = currentTime.getHours() * 3600 + currentTime.getMinutes() * 60 + currentTime.getSeconds();
-				const route = ROUTE_DATA[direction];
-				const isMobile = this.isMobile;
-				const isSmallScreen = window.innerWidth <= 320;
-
-				// Скрываем все автобусы и подсказки
-				this.buses[direction].forEach(bus => bus.style.display = 'none');
-				this.nextStopInfo[direction].forEach(info => {
-					info.style.display = 'none';
-					info.className = 'stop-info';
-				});
-
-				// Собираем информацию о всех активных автобусах
-				let activeBuses = [];
-
-				for (let tripIndex = 0; tripIndex < route.stops[0].times.length; tripIndex++) {
-					const [depH, depM] = route.stops[0].times[tripIndex].split(':').map(Number);
-					const depSec = depH * 3600 + depM * 60;
-					const [arrH, arrM] = route.stops[route.stops.length-1].times[tripIndex].split(':').map(Number);
-					const arrSec = arrH * 3600 + arrM * 60;
-					
-					if (currentSec >= depSec && currentSec <= arrSec + 60) {
-						const bus = this.buses[direction][tripIndex];
-						const info = this.nextStopInfo[direction][tripIndex];
-						bus.style.display = 'block';
-
-						let currentPosition = 0;
-						let currentStopName = "";
-						let nextStopInfo = null;
-						let isAtStop = false;
-
-						// Определяем текущую позицию 
-						for (let i = 0; i < route.stops.length; i++) {
-							const [stopH, stopM] = route.stops[i].times[tripIndex].split(':').map(Number);
-							const stopSec = stopH * 3600 + stopM * 60;
-							const stopDuration = route.stops[i].stopDuration || 20;
-							const stopEndSec = stopSec + (route.stops[i].hidden ? 0 : stopDuration);
-
-							if (currentSec >= stopSec && currentSec < stopEndSec) {
-								currentPosition = route.stops[i].position;
-								if (!route.stops[i].hidden) {
-									currentStopName = route.stops[i].name;
-									isAtStop = true;
-									let nextStopIndex = i + 1;
-									while (nextStopIndex < route.stops.length && route.stops[nextStopIndex].hidden) {
-										nextStopIndex++;
-									}
-									if (nextStopIndex < route.stops.length) {
-										nextStopInfo = {
-											name: route.stops[nextStopIndex].name,
-											arrivalTime: route.stops[nextStopIndex].times[tripIndex]
-										};
-									}
-								}
-								break;
-							}
-							else if (i > 0 && currentSec >= (route.stops[i-1].times[tripIndex].split(':').map(Number).reduce((h,m) => h * 3600 + m * 60) + 
-									 (route.stops[i-1].hidden ? 0 : (route.stops[i-1].stopDuration || 20))) && 
-									 currentSec < stopSec) {
-								const [prevStopH, prevStopM] = route.stops[i-1].times[tripIndex].split(':').map(Number);
-								const prevStopEndSec = prevStopH * 3600 + prevStopM * 60 + 
-													 (route.stops[i-1].hidden ? 0 : (route.stops[i-1].stopDuration || 20));
-								const progress = (currentSec - prevStopEndSec) / (stopSec - prevStopEndSec);
-								currentPosition = route.stops[i-1].position + 
-									(route.stops[i].position - route.stops[i-1].position) * progress;
-								
-								let nextRegularStopIndex = i;
-								while (nextRegularStopIndex < route.stops.length && route.stops[nextRegularStopIndex].hidden) {
-									nextRegularStopIndex++;
-								}
-								
-								if (nextRegularStopIndex < route.stops.length) {
-									const [nextStopH, nextStopM] = route.stops[nextRegularStopIndex].times[tripIndex].split(':').map(Number);
-									const nextStopSec = nextStopH * 3600 + nextStopM * 60;
-									nextStopInfo = {
-										name: route.stops[nextRegularStopIndex].name,
-										arrivalTime: route.stops[nextRegularStopIndex].times[tripIndex],
-										minutesLeft: Math.ceil((nextStopSec - currentSec) / 60)
-									};
-								}
-								break;
-							}
-						}
-						
-						// Позиционируем автобус 
-						const point = this.getPointAtPercentage(direction, currentPosition);
-						const svgRect = this.svg.getBoundingClientRect();
-						const viewBox = this.svg.viewBox.baseVal;
-						
-						const x = (point.x / viewBox.width) * svgRect.width;
-						const y = (point.y / viewBox.height) * svgRect.height;
-						
-						bus.style.left = `${x}px`;
-						bus.style.top = `${y}px`;
-
-						// Сохраняем информацию об автобусе
-						if ((isAtStop || nextStopInfo) && !route.stops.find(s => s.position === currentPosition && s.hidden)) {
-							activeBuses.push({
-								isAtStop,
-								currentStopName,
-								nextStopInfo,
-								x,
-								y,
-								infoElement: info
-							});
-						}
-					}
-				}
-
-				// Обрабатываем активные автобусы
-				if (isSmallScreen && activeBuses.length > 0) {
-					// Для маленьких экранов - объединяем информацию в одну подсказку
-					const mainInfo = activeBuses[0].infoElement;
-					mainInfo.style.display = 'block';
-					mainInfo.className = `stop-info mobile ${direction}-info`;
-					
-					/* Позиционируем внизу экрана
-					mainInfo.style.position = 'fixed';
-					mainInfo.style.bottom = direction === 'forward' ? '60px' : '10px';
-					mainInfo.style.left = '10px';
-					mainInfo.style.right = '10px';
-					mainInfo.style.width = 'calc(100% - 20px)';
-					mainInfo.style.transform = 'none';
-					mainInfo.style.zIndex = '100';*/
-
-					// Формируем содержимое
-					let content = `<div style="font-weight:bold; margin-bottom:5px;">Маршрут ${direction === 'forward' ? 'Бронницы → МЦД Отдых' : 'МЦД Отдых → Бронницы'}</div>`;
-					
-					activeBuses.forEach((bus, index) => {
-						if (index > 0) content += '<hr style="margin:5px 0; border:none; border-top:1px dashed #ccc;">';
-						
-						content += `
-							<div>
-								<div class="stop-time">${bus.isAtStop ? bus.currentStopName : `Следующая: ${bus.nextStopInfo.name}`}</div>
-								<div class="stop-eta">${bus.isAtStop ? 
-								(bus.nextStopInfo ? `Следующая: ${bus.nextStopInfo.name} в ${bus.nextStopInfo.arrivalTime}` : 'Конечная') : 
-								`Прибытие в ${bus.nextStopInfo.arrivalTime} (через ${bus.nextStopInfo.minutesLeft} мин)`}
-								</div>
-							</div>
-						`;
-					});
-
-					mainInfo.innerHTML = content;
-					
-					// Скрываем остальные подсказки
-					for (let i = 1; i < activeBuses.length; i++) {
-						activeBuses[i].infoElement.style.display = 'none';
-					}
-				} else {
-					// Для обычных экранов
-					activeBuses.forEach(bus => {
-						const info = bus.infoElement;
-						info.style.display = 'block';
-						info.className = `stop-info ${direction}-info desktop`;
-						
-						// Получаем скорректированные координаты
-						const adjustedPos = this.adjustInfoPosition(info, bus.x, bus.y, direction);
-						
-						info.style.left = `${adjustedPos.x}px`;
-						info.style.top = `${adjustedPos.y}px`;
-						
-						info.innerHTML = `
-							<div class="stop-time">${bus.isAtStop ? bus.currentStopName : `Следующая: ${bus.nextStopInfo.name}`}</div>
-							<div class="stop-eta">${bus.isAtStop ? 
-								(bus.nextStopInfo ? `Следующая: ${bus.nextStopInfo.name} в ${bus.nextStopInfo.arrivalTime}` : 'Конечная') : 
-								`Прибытие в ${bus.nextStopInfo.arrivalTime} (через ${bus.nextStopInfo.minutesLeft} мин)`}
-							</div>
-						`;
-					});
-				}
-			}
-
             updateSchedule(direction, stopIndex) {
                 const stop = ROUTE_DATA[direction].stops[stopIndex];
-                // Не показываем расписание для скрытых остановок
                 if (stop.hidden) return;
             
                 const currentTime = new Date();
                 const currentSec = currentTime.getHours() * 3600 + currentTime.getMinutes() * 60 + currentTime.getSeconds();
 
-                // Устанавливаем заголовок с маршрутом
                 this.scheduleTitle.textContent = `${stop.name} → ${direction === 'forward' ? 'МЦД Отдых' : 'Бронницы'}`;
                 this.scheduleTimes.innerHTML = '';
 
@@ -1468,7 +1609,6 @@
                 if (nextTripTime !== null) {
                     const minutesLeft = Math.ceil((nextTripTime - currentSec) / 60);
                 
-                    // Форматируем время в "X час(ов) Y мин"
                     let timeLeftText = '';
                     if (minutesLeft >= 60) {
                         const hours = Math.floor(minutesLeft / 60);
@@ -1484,7 +1624,6 @@
                 }
             }
 
-            // Вспомогательные методы для правильного склонения
             getHoursText(hours) {
                 if (hours % 10 === 1 && hours % 100 !== 11) return 'час';
                 if ([2, 3, 4].includes(hours % 10) && ![12, 13, 14].includes(hours % 100)) return 'часа';
@@ -1499,7 +1638,6 @@
 
             showSchedule(direction, stopIndex) {
                 const stop = ROUTE_DATA[direction].stops[stopIndex];
-                // Не показываем расписание для скрытых остановок
                 if (stop.hidden) return;
                 
                 this.currentSchedule = { direction, stopIndex };
