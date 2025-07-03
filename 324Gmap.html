@@ -74,6 +74,18 @@
             left: 0;
             z-index: 0;
         }
+
+		.overlay-container {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			pointer-events: none;
+			overflow: visible;
+			margin: 0;
+			padding: 0;
+		}
         
         /* Стили автобусов */
         .bus {
@@ -86,6 +98,10 @@
             box-shadow: 0 0 5px rgba(0,0,0,0.7);
             pointer-events: none;
             background-color: rgba(225, 219, 88, 1);
+			transition: transform 1s linear; /*cubic-bezier(0.2, 0.8, 0.4, 1)*/
+			will-change: transform;
+			top: 0;
+			left: 0;
         }
         
         .forward-bus {
@@ -293,6 +309,8 @@
             background-color: rgba(0,0,0,0.3);
             transform-origin: 0 50%;
             pointer-events: none;
+			transition: transform 1s linear
+			will-change: transform, width;
         }
 
 
@@ -750,7 +768,7 @@
 					},{ 
 						name: "Совхоз имени Тельмана", 
 						position: 47, 
-						times: ["07:03", "07:33", "09:18", "09:56", "12:18", "13:53", "15:28", "16:07", "17:43", "19:13", "20:53"] 
+						times: ["07:03", "07:33", "09:18", "09:58", "12:18", "13:53", "15:28", "16:07", "17:43", "19:13", "20:53"] 
 					},{ 
 						name: "Михайловская Слобода", 
 						position: 49.6, 
@@ -1092,581 +1110,544 @@
             `
         };
 
-        class BusTracker {
-            constructor() {
-                this.mapWrapper = document.getElementById('map-wrapper');
-                this.mapContainer = document.getElementById('combined-map');
-                this.currentTimeElement = document.getElementById('current-time');
-                this.schedulePanel = document.getElementById('schedule-panel');
-                this.scheduleTitle = document.getElementById('schedule-title');
-                this.scheduleTimes = document.getElementById('schedule-times');
-                this.nextBusInfo = document.getElementById('next-bus-info');
-                this.closeScheduleBtn = document.getElementById('close-schedule');
-                
-                this.buses = { forward: [], backward: [] };
-                this.pathCache = { forward: [], backward: [] };
-                this.currentPositions = { forward: [], backward: [] };
-                this.nextStopInfo = { forward: [], backward: [] };
-                this.currentSchedule = null;
-                this.isMobile = window.innerWidth < 768;
-                this.arrows = []; // Массив для хранения стрелок
-                
-                this.init();
-            }
+class BusTracker {
+    constructor() {
+        this.mapWrapper = document.getElementById('map-wrapper');
+        this.mapContainer = document.getElementById('combined-map');
+        this.currentTimeElement = document.getElementById('current-time');
+        this.schedulePanel = document.getElementById('schedule-panel');
+        this.scheduleTitle = document.getElementById('schedule-title');
+        this.scheduleTimes = document.getElementById('schedule-times');
+        this.nextBusInfo = document.getElementById('next-bus-info');
+        this.closeScheduleBtn = document.getElementById('close-schedule');
+        
+        this.buses = { forward: [], backward: [] };
+        this.pathCache = { forward: [], backward: [] };
+        this.currentSchedule = null;
+        this.isMobile = window.innerWidth < 768;
+        this.arrows = [];
+        this.resizeTimeout = null;
+        this.animationFrameId = null;
+        this.updateInterval = null;
+        
+        this.initOverlayContainer();
+        this.init();
+    }
+    
+    initOverlayContainer() {
+        this.overlayContainer = document.createElement('div');
+        this.overlayContainer.className = 'overlay-container';
+        this.mapContainer.appendChild(this.overlayContainer);
+    }
+    
+    init() {
+        this.setupLayout();
+        this.loadSVG().then(() => {
+            this.cachePathPoints();
+            this.createStopElements();
+            this.createAllBusElements();
+            this.setupEventListeners();
+            this.startAnimation();
+            this.startUpdateInterval();
+        });
+    }
+    
+    setupLayout() {
+        this.isMobile = window.innerWidth < 768;
+        this.mapWrapper.className = `map-wrapper ${this.isMobile ? 'mobile' : 'desktop'}`;
+    }
+
+    loadSVG() {
+        return new Promise((resolve) => {
+            const oldSVG = this.mapContainer.querySelector('svg');
+            if (oldSVG) oldSVG.remove();
             
-            init() {
-                this.setupLayout();
-                this.loadSVG().then(() => {
-                    this.cachePathPoints();
-                    this.createStopElements();
-                    this.createAllBusElements();
-                    this.setupEventListeners();
-                    this.updateCurrentTime();
-                    this.updateAllPositions();
-                    
-                    setInterval(() => {
-                        this.updateCurrentTime();
-                        this.updateBusPositions();
-                        this.updateScheduleIfVisible();
-                    }, 1000);
-                });
-            }
+            this.mapContainer.insertAdjacentHTML('afterbegin', 
+                this.isMobile ? SVG_DATA.mobile : SVG_DATA.desktop);
+
+            this.svg = this.mapContainer.querySelector('svg');
+            this.forwardPath = document.getElementById('forward-path');
+            this.backwardPath = document.getElementById('backward-path');
             
-            setupLayout() {
-                this.isMobile = window.innerWidth < 768;
-                this.mapWrapper.className = `map-wrapper ${this.isMobile ? 'mobile' : 'desktop'}`;
-            }
-
-			loadSVG() {
-				return new Promise((resolve) => {
-					// Удаляем ВСЕ дочерние элементы контейнера
-					while (this.mapContainer.firstChild) {
-						this.mapContainer.removeChild(this.mapContainer.firstChild);
-					}
-										// Удаляем старые элементы
-								this.mapContainer.innerHTML = '';
-								
-								// Вставляем новую SVG
-								this.mapContainer.insertAdjacentHTML('afterbegin', 
-									this.isMobile ? SVG_DATA.mobile : SVG_DATA.desktop);
-
-								// Создаем контейнер для оверлеев
-								this.overlayElements = document.createElement('div');
-								this.overlayElements.className = 'map-overlay-elements';
-								this.mapContainer.appendChild(this.overlayElements);
-
-								// Создаем панель расписания
-								this.schedulePanel = document.createElement('div');
-								this.schedulePanel.className = 'schedule-panel';
-								this.schedulePanel.id = 'schedule-panel';
-								this.schedulePanel.innerHTML = `
-									<div class="schedule-header">
-										<h3 class="schedule-title" id="schedule-title"></h3>
-										<button class="close-schedule" id="close-schedule">×</button>
-									</div>
-									<div id="schedule-times"></div>
-									<div class="next-bus-info" id="next-bus-info"></div>
-								`;
-								this.mapContainer.appendChild(this.schedulePanel);
-
-								// Получаем ссылки на элементы
-								this.svg = this.mapContainer.querySelector('svg');
-								this.forwardPath = document.getElementById('forward-path');
-								this.backwardPath = document.getElementById('backward-path');
-								this.scheduleTitle = document.getElementById('schedule-title');
-								this.scheduleTimes = document.getElementById('schedule-times');
-								this.nextBusInfo = document.getElementById('next-bus-info');
-								this.closeScheduleBtn = document.getElementById('close-schedule');
-
-								// Очищаем кеш путей и пересчитываем
-								this.pathCache = { forward: [], backward: [] };
-								this.cachePathPoints();
-								
-								// Пересоздаем элементы остановок и автобусов
-								this.createStopElements();
-								this.createAllBusElements();
-								
-								// Обновляем позиции
-								this.updateAllPositions();
-
-								resolve();
-				});
-			}
-
-            
-			 setupEventListeners() {
-				window.addEventListener('resize', () => {
-					const newIsMobile = window.innerWidth < 768;
-					if (newIsMobile !== this.isMobile) {
-						this.isMobile = newIsMobile;
-						this.setupLayout();
-						this.loadSVG().then(() => {
-							this.cachePathPoints();
-							this.updateAllPositions();
-						});
-					} else {
-						// Если ориентация не изменилась, просто обновляем позиции
-						this.updateAllPositions();
-					}
-				});
-				
-				this.closeScheduleBtn.addEventListener('click', () => {
-					this.hideSchedule();
-				});
-				
-				document.getElementById('combined-map').addEventListener('click', (e) => {
-					if (e.target === document.getElementById('combined-map')) {
-						this.hideSchedule();
-					}
-				});
-			}
-            
-            updateAllPositions() {
-                this.updateStopPositions();
-                this.updateBusPositions();
-            }
-            
-            cachePathPoints() {
-                const cachePath = (path) => {
-                    const length = path.getTotalLength();
-                    const points = [];
-                    for (let i = 0; i <= 1000; i++) {
-                        const point = path.getPointAtLength(length * i / 1000);
-                        points.push({
-                            x: point.x,
-                            y: point.y,
-                            percentage: i / 10
-                        });
-                    }
-                    return points;
-                };
-                
-                this.pathCache.forward = cachePath(this.forwardPath);
-                this.pathCache.backward = cachePath(this.backwardPath);
-            }
-            
-            createStopElements() {
-                const createStops = (direction) => {
-                    document.querySelectorAll(`.stop.${direction}-stop`).forEach(el => el.remove());
-                    document.querySelectorAll(`.stop-label`).forEach(el => {
-                        if (el.previousElementSibling && el.previousElementSibling.classList.contains(`${direction}-stop`)) {
-                            el.remove();
-                        }
+            resolve();
+        });
+    }
+    
+    setupEventListeners() {
+        window.addEventListener('resize', () => {
+            clearTimeout(this.resizeTimeout);
+            this.resizeTimeout = setTimeout(() => {
+                const newIsMobile = window.innerWidth < 768;
+                if (newIsMobile !== this.isMobile) {
+                    this.isMobile = newIsMobile;
+                    this.setupLayout();
+                    this.loadSVG().then(() => {
+                        this.cachePathPoints();
+                        this.updateAllPositions();
                     });
-
-                    ROUTE_DATA[direction].stops.forEach((stop, index) => {
-                        if (stop.hidden) return;
-
-                        const stopElement = document.createElement('div');
-                        stopElement.className = `stop ${direction}-stop`;
-                        stopElement.id = `${direction}-stop-${index}`;
-                        stopElement.dataset.direction = direction;
-                        stopElement.dataset.index = index;
-
-                        const label = document.createElement('div');
-                        label.className = 'stop-label';
-                        label.textContent = stop.name;
-
-                        this.overlayElements.appendChild(stopElement);
-                        this.overlayElements.appendChild(label);
-
-                        stopElement.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            this.showSchedule(direction, index);
-                        });
-                    });
-                };
-
-                createStops('forward');
-                createStops('backward');
-            }
-
-            createAllBusElements() {
-                const createBuses = (direction) => {
-                    const mapContainer = document.getElementById('combined-map');
-                    document.querySelectorAll(`.bus.${direction}-bus`).forEach(el => el.remove());
-                    document.querySelectorAll(`#${direction}-stop-info`).forEach(el => el.remove());
-                    
-                    this.buses[direction] = [];
-                    this.nextStopInfo[direction] = [];
-                    
-                    const maxBuses = ROUTE_DATA[direction].stops[0].times.length;
-            
-                    for (let i = 0; i < maxBuses; i++) {
-                        const bus = document.createElement('div');
-                        bus.className = `bus ${direction}-bus`;
-                        bus.id = `${direction}-bus-${i}`;
-                        bus.style.display = 'none';
-                        mapContainer.appendChild(bus);
-                        this.buses[direction].push(bus);
-                
-                        const info = document.createElement('div');
-                        info.className = 'stop-info';
-                        info.id = `${direction}-stop-info-${i}`;
-                        info.style.display = 'none';
-                        mapContainer.appendChild(info);
-                        this.nextStopInfo[direction].push(info);
-                
-                        this.currentPositions[direction].push({ x: 0, y: 0 });
-                    }
-                };
-
-                createBuses('forward');
-                createBuses('backward');
-            }
-            
-            updateCurrentTime() {
-                const now = new Date();
-                const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
-                this.currentTimeElement.textContent = `Текущее время: ${timeStr}`;
-                return now;
-            }
-            
-            updateStopPositions() {
-                const positionStop = (direction, index) => {
-                    const stop = ROUTE_DATA[direction].stops[index];
-                    const element = document.getElementById(`${direction}-stop-${index}`);
-                    if (!element) return;
-
-                    const point = this.getPointAtPercentage(direction, stop.position);
-                    
-                    const svgRect = this.svg.getBoundingClientRect();
-                    const viewBox = this.svg.viewBox.baseVal;
-                    
-                    const x = (point.x / viewBox.width) * svgRect.width;
-                    const y = (point.y / viewBox.height) * svgRect.height;
-
-                    element.style.left = `${x}px`;
-                    element.style.top = `${y}px`;
-
-                    const label = element.nextElementSibling;
-                    if (label && label.classList.contains('stop-label')) {
-                        label.style.left = `${x}px`;
-                        label.style.top = `${y - 15}px`;
-                    }
-                };
-
-                ['forward', 'backward'].forEach(direction => {
-                    ROUTE_DATA[direction].stops.forEach((stop, index) => {
-                        if (!stop.hidden) {
-                            positionStop(direction, index);
-                        }
-                    });
-                });
-            }
-            
-			updateRoutePositions(direction) {
-				const now = new Date();
-				const currentSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-				const route = ROUTE_DATA[direction];
-
-				// Удаляем старые стрелки для этого направления
-				this.clearArrows(direction);
-
-				// Удаляем все старые подсказки этого направления
-				document.querySelectorAll(`.stop-info.${direction}-info`).forEach(el => el.remove());
-
-				// Скрываем все автобусы этого направления
-				this.buses[direction].forEach(bus => bus.style.display = 'none');
-
-				let activeBuses = [];
-
-				for (let tripIndex = 0; tripIndex < route.stops[0].times.length; tripIndex++) {
-					const [depH, depM] = route.stops[0].times[tripIndex].split(':').map(Number);
-					const depSec = depH * 3600 + depM * 60;
-					const [arrH, arrM] = route.stops[route.stops.length-1].times[tripIndex].split(':').map(Number);
-					const arrSec = arrH * 3600 + arrM * 60;
-					
-					if (currentSec >= depSec && currentSec <= arrSec + 60) {
-						const bus = this.buses[direction][tripIndex];
-						bus.style.display = 'block';
-
-						let currentPosition = 0;
-						let currentStopName = "";
-						let nextStopInfo = null;
-						let isAtStop = false;
-
-						// Определяем текущую позицию автобуса
-						for (let i = 0; i < route.stops.length; i++) {
-							const stop = route.stops[i];
-							const [stopH, stopM] = stop.times[tripIndex].split(':').map(Number);
-							const stopSec = stopH * 3600 + stopM * 60;
-							const stopDuration = stop.stopDuration || 20;
-							const stopEndSec = stopSec + stopDuration;
-
-							if (currentSec >= stopSec && currentSec < stopEndSec) {
-								currentPosition = stop.position;
-								// Показываем название только если остановка не скрыта
-								currentStopName = stop.hidden ? "" : stop.name;
-								isAtStop = true;
-								
-								// Находим следующую НЕ скрытую остановку для отображения
-								let nextVisibleStopIndex = i + 1;
-								while (nextVisibleStopIndex < route.stops.length && 
-									   route.stops[nextVisibleStopIndex].hidden === true) {
-									nextVisibleStopIndex++;
-								}
-								
-								if (nextVisibleStopIndex < route.stops.length) {
-									const nextStop = route.stops[nextVisibleStopIndex];
-									const [nextStopH, nextStopM] = nextStop.times[tripIndex].split(':').map(Number);
-									const nextStopSec = nextStopH * 3600 + nextStopM * 60;
-									nextStopInfo = {
-										name: nextStop.name,
-										arrivalTime: nextStop.times[tripIndex],
-										minutesLeft: Math.ceil((nextStopSec - currentSec) / 60)
-									};
-								}
-								break;
-							}
-							else if (i > 0 && currentSec >= (route.stops[i-1].times[tripIndex].split(':').map(Number).reduce((h,m) => h * 3600 + m * 60) + 
-									 (route.stops[i-1].stopDuration || 20)) && 
-									 currentSec < stopSec) {
-								const prevStop = route.stops[i-1];
-								const [prevStopH, prevStopM] = prevStop.times[tripIndex].split(':').map(Number);
-								const prevStopEndSec = prevStopH * 3600 + prevStopM * 60 + 
-													 (prevStop.stopDuration || 20);
-								const progress = (currentSec - prevStopEndSec) / (stopSec - prevStopEndSec);
-								currentPosition = prevStop.position + 
-									(stop.position - prevStop.position) * progress;
-								
-								// Находим следующую НЕ скрытую остановку для отображения
-								let nextVisibleStopIndex = i;
-								while (nextVisibleStopIndex < route.stops.length && 
-									   route.stops[nextVisibleStopIndex].hidden === true) {
-									nextVisibleStopIndex++;
-								}
-								
-								if (nextVisibleStopIndex < route.stops.length) {
-									const nextStop = route.stops[nextVisibleStopIndex];
-									const [nextStopH, nextStopM] = nextStop.times[tripIndex].split(':').map(Number);
-									const nextStopSec = nextStopH * 3600 + nextStopM * 60;
-									nextStopInfo = {
-										name: nextStop.name,
-										arrivalTime: nextStop.times[tripIndex],
-										minutesLeft: Math.ceil((nextStopSec - currentSec) / 60)
-									};
-								}
-								break;
-							}
-						}
-						
-						// Позиционируем автобус
-						const point = this.getPointAtPercentage(direction, currentPosition);
-						const svgRect = this.svg.getBoundingClientRect();
-						const viewBox = this.svg.viewBox.baseVal;
-						
-						const x = (point.x / viewBox.width) * svgRect.width;
-						const y = (point.y / viewBox.height) * svgRect.height;
-						
-						bus.style.left = `${x}px`;
-						bus.style.top = `${y}px`;
-
-						if ((nextStopInfo || (isAtStop && currentStopName)) && !(isAtStop && !currentStopName && !nextStopInfo)) {
-							activeBuses.push({
-								isAtStop,
-								currentStopName,
-								nextStopInfo,
-								x,
-								y,
-								direction
-							});
-						}
-					}
-				}
-
-				// Создаем новые подсказки только если есть активные автобусы
-				if (activeBuses.length > 0) {
-					const mainInfo = document.createElement('div');
-					mainInfo.className = `stop-info ${direction}-info`;
-					
-					let content = `<div class="route-title">Маршрут ${direction === 'forward' ? 'Бронницы → МЦД Отдых' : 'МЦД Отдых → Бронницы'}</div>`;
-					
-					activeBuses.forEach((bus, index) => {
-						if (index > 0) content += '<hr class="bus-separator">';
-						
-						if (bus.isAtStop) {
-							if (bus.currentStopName) {
-								content += `
-									<div class="bus-info">
-										<div class="stop-time">${bus.currentStopName}</div>
-										<div class="stop-eta">${bus.nextStopInfo ? 
-											`Следующая: ${bus.nextStopInfo.name} в ${bus.nextStopInfo.arrivalTime}` : 'Конечная'}</div>
-									</div>
-								`;
-							} else if (bus.nextStopInfo) {
-								content += `
-									<div class="bus-info">
-										<div class="stop-time">Следующая: ${bus.nextStopInfo.name}</div>
-										<div class="stop-eta">Прибытие в ${bus.nextStopInfo.arrivalTime} (через ${bus.nextStopInfo.minutesLeft} мин)</div>
-									</div>
-								`;
-							}
-						} else if (bus.nextStopInfo) {
-							content += `
-								<div class="bus-info">
-									<div class="stop-time">Следующая: ${bus.nextStopInfo.name}</div>
-									<div class="stop-eta">Прибытие в ${bus.nextStopInfo.arrivalTime} (через ${bus.nextStopInfo.minutesLeft} мин)</div>
-								</div>
-							`;
-						}
-					});
-
-					mainInfo.innerHTML = content;
-					this.mapContainer.appendChild(mainInfo);
-					
-					// Добавляем стрелки от подсказки к автобусам
-					activeBuses.forEach(bus => {
-						this.addArrow(mainInfo, bus.x, bus.y, direction);
-					});
-				}
-			}
-			
-            // Метод для добавления стрелки от элемента к точке
-			addArrow(fromElement, toX, toY, direction) {
-				const fromRect = fromElement.getBoundingClientRect();
-				const mapRect = this.mapContainer.getBoundingClientRect();
-				
-				// Координаты центра элемента "from"
-				const fromX = fromRect.left + fromRect.width / 2 - mapRect.left;
-				const fromY = fromRect.top + fromRect.height / 2 - mapRect.top;
-				
-				// Координаты точки "to" уже относительно карты
-				const toXRel = toX;
-				const toYRel = toY;
-				
-				// Рассчитываем длину и угол стрелки
-				const dx = toXRel - fromX;
-				const dy = toYRel - fromY;
-				const length = Math.sqrt(dx * dx + dy * dy);
-				const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-				
-				// Создаем линию стрелки
-				const line = document.createElement('div');
-				line.className = 'arrow-line';
-				// Добавляем класс направления
-				line.classList.add(`${direction}-arrow`);
-				line.style.width = `${length}px`;
-				line.style.left = `${fromX}px`;
-				line.style.top = `${fromY}px`;
-				line.style.transform = `rotate(${angle}deg)`;
-				
-				// Добавляем элементы в контейнер карты
-				this.mapContainer.appendChild(line);
-				
-				// Сохраняем ссылки для последующего удаления
-				this.arrows.push(line);
-			}
-            
-            // Метод для удаления всех стрелок
-			clearArrows(direction) {
-				this.arrows.forEach(arrow => {
-					if (arrow.parentNode && arrow.classList.contains(`${direction}-arrow`)) {
-						arrow.parentNode.removeChild(arrow);
-					}
-				});
-				// Удаляем только стрелки этого направления из массива
-				this.arrows = this.arrows.filter(arrow => !arrow.classList.contains(`${direction}-arrow`));
-			}
-            
-            updateBusPositions() {
-                this.updateRoutePositions('forward');
-                this.updateRoutePositions('backward');
-            }
-
-            updateSchedule(direction, stopIndex) {
-                const stop = ROUTE_DATA[direction].stops[stopIndex];
-                if (stop.hidden) return;
-            
-                const currentTime = new Date();
-                const currentSec = currentTime.getHours() * 3600 + currentTime.getMinutes() * 60 + currentTime.getSeconds();
-
-                this.scheduleTitle.textContent = `${stop.name} → ${direction === 'forward' ? 'МЦД Отдых' : 'Бронницы'}`;
-                this.scheduleTimes.innerHTML = '';
-
-                let nextTripTime = null;
-                let nextTripIndex = -1;
-
-                stop.times.forEach((time, index) => {
-                    const [h, m] = time.split(':').map(Number);
-                    const timeSec = h * 3600 + m * 60;
-                    const stopDuration = stop.stopDuration || 20;
-                    const isPast = currentSec > timeSec + stopDuration;
-                    const isCurrent = currentSec >= timeSec && currentSec <= timeSec + stopDuration;
-
-                    if (timeSec > currentSec && (nextTripTime === null || timeSec < nextTripTime)) {
-                        nextTripTime = timeSec;
-                        nextTripIndex = index;
-                    }
-
-                    const timeElement = document.createElement('div');
-                    timeElement.className = `schedule-item ${isPast ? 'past-time' : (isCurrent ? 'current-time' : 'future-time')}`;
-                    timeElement.textContent = `${time} ${isCurrent ? '(сейчас)' : ''}`;
-                    this.scheduleTimes.appendChild(timeElement);
-                });
-
-                if (nextTripTime !== null) {
-                    const minutesLeft = Math.ceil((nextTripTime - currentSec) / 60);
-                
-                    let timeLeftText = '';
-                    if (minutesLeft >= 60) {
-                        const hours = Math.floor(minutesLeft / 60);
-                        const mins = minutesLeft % 60;
-                        timeLeftText = `${hours} ${this.getHoursText(hours)}${mins > 0 ? ` ${mins} ${this.getMinutesText(mins)}` : ''}`;
-                    } else {
-                        timeLeftText = `${minutesLeft} ${this.getMinutesText(minutesLeft)}`;
-                    }
-                
-                    this.nextBusInfo.textContent = `Следующий автобус через ${timeLeftText} (в ${stop.times[nextTripIndex]})`;
-                } else {
-                    this.nextBusInfo.textContent = 'Рейсы на сегодня завершены';
                 }
+            }, 200);
+        });
+        
+        this.closeScheduleBtn.addEventListener('click', () => this.hideSchedule());
+        this.mapContainer.addEventListener('click', (e) => {
+            if (e.target === this.mapContainer) this.hideSchedule();
+        });
+    }
+    
+    cachePathPoints() {
+        const cachePath = (path) => {
+            if (!path) return [];
+            const length = path.getTotalLength();
+            const points = [];
+            const segmentCount = 3000; // Увеличенная плотность точек
+            
+            for (let i = 0; i <= segmentCount; i++) {
+                const point = path.getPointAtLength(length * i / segmentCount);
+                points.push({
+                    x: point.x,
+                    y: point.y,
+                    percentage: i / segmentCount * 100
+                });
             }
+            return points;
+        };
+        
+        this.pathCache.forward = cachePath(this.forwardPath);
+        this.pathCache.backward = cachePath(this.backwardPath);
+    }
+    
+    createStopElements() {
+        const createStops = (direction) => {
+            this.overlayContainer.querySelectorAll(`.${direction}-stop`).forEach(el => el.remove());
 
-            getHoursText(hours) {
-                if (hours % 10 === 1 && hours % 100 !== 11) return 'час';
-                if ([2, 3, 4].includes(hours % 10) && ![12, 13, 14].includes(hours % 100)) return 'часа';
-                return 'часов';
-            }
-
-            getMinutesText(minutes) {
-                if (minutes % 10 === 1 && minutes % 100 !== 11) return 'минуту';
-                if ([2, 3, 4].includes(minutes % 10) && ![12, 13, 14].includes(minutes % 100)) return 'минуты';
-                return 'минут';
-            }
-
-            showSchedule(direction, stopIndex) {
-                const stop = ROUTE_DATA[direction].stops[stopIndex];
+            ROUTE_DATA[direction].stops.forEach((stop, index) => {
                 if (stop.hidden) return;
+
+                const stopElement = document.createElement('div');
+                stopElement.className = `stop ${direction}-stop`;
+                stopElement.dataset.direction = direction;
+                stopElement.dataset.index = index;
+
+                const label = document.createElement('div');
+                label.className = 'stop-label';
+                label.textContent = stop.name;
+
+                this.overlayContainer.appendChild(stopElement);
+                this.overlayContainer.appendChild(label);
+
+                stopElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.showSchedule(direction, index);
+                });
+            });
+        };
+
+        createStops('forward');
+        createStops('backward');
+        this.updateStopPositions();
+    }
+
+    createAllBusElements() {
+        const createBuses = (direction) => {
+            this.overlayContainer.querySelectorAll(`.${direction}-bus`).forEach(el => el.remove());
+            this.buses[direction] = [];
+            
+            const maxBuses = ROUTE_DATA[direction].stops[0].times.length;
+            for (let i = 0; i < maxBuses; i++) {
+                const bus = document.createElement('div');
+                bus.className = `bus ${direction}-bus`;
+                bus.style.display = 'none';
+                this.overlayContainer.appendChild(bus);
+                this.buses[direction].push(bus);
+            }
+        };
+
+        createBuses('forward');
+        createBuses('backward');
+    }
+    
+    startAnimation() {
+        const animate = () => {
+            this.updateAllPositions();
+            this.animationFrameId = requestAnimationFrame(animate);
+        };
+        animate();
+    }
+    
+    startUpdateInterval() {
+        this.updateInterval = setInterval(() => {
+            this.updateCurrentTime();
+            this.updateScheduleIfVisible();
+        }, 1000);
+        this.updateCurrentTime(); // Первоначальное обновление
+    }
+    
+    updateCurrentTime() {
+        const now = new Date();
+        const timeStr = now.toTimeString().substr(0, 8);
+        this.currentTimeElement.textContent = `Текущее время: ${timeStr}`;
+        return now;
+    }
+    
+    updateAllPositions() {
+        this.clearAllArrows();
+        this.updateStopPositions();
+        this.updateBusPositions();
+    }
+    
+    clearAllArrows() {
+        this.arrows.forEach(arrow => arrow.remove());
+        this.arrows = [];
+    }
+    
+    updateStopPositions() {
+        const positionStop = (direction, index) => {
+            const stop = ROUTE_DATA[direction].stops[index];
+            const stopElement = this.overlayContainer.querySelector(`.${direction}-stop[data-index="${index}"]`);
+            if (!stopElement) return;
+
+            const point = this.getPointAtPercentage(direction, stop.position);
+            const { x, y } = this.convertToPixelPosition(point.x, point.y);
+            
+            stopElement.style.transform = `translate(${x}px, ${y}px)`;
+            
+            const label = stopElement.nextElementSibling;
+            if (label?.classList.contains('stop-label')) {
+                label.style.transform = `translate(${x}px, ${y - 15}px)`;
+            }
+        };
+
+        ['forward', 'backward'].forEach(direction => {
+            ROUTE_DATA[direction].stops.forEach((stop, index) => {
+                if (!stop.hidden) positionStop(direction, index);
+            });
+        });
+    }
+    
+    convertToPixelPosition(x, y) {
+        if (!this.svg || !this.svg.viewBox?.baseVal) return { x: 0, y: 0 };
+        
+        const svgRect = this.svg.getBoundingClientRect();
+        const viewBox = this.svg.viewBox.baseVal;
+        
+        return {
+            x: (x / viewBox.width) * svgRect.width - 4,
+            y: (y / viewBox.height) * svgRect.height - 4
+        };
+    }
+    
+    updateBusPositions() {
+        this.updateRoutePositions('forward');
+        this.updateRoutePositions('backward');
+    }
+
+    updateRoutePositions(direction) {
+        const now = new Date();
+        const currentSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+        const route = ROUTE_DATA[direction];
+
+        let activeBuses = [];
+
+        route.stops[0].times.forEach((_, tripIndex) => {
+            const bus = this.buses[direction][tripIndex];
+            if (!bus) return;
+
+            const [depH, depM] = route.stops[0].times[tripIndex].split(':').map(Number);
+            const depSec = depH * 3600 + depM * 60;
+            const [arrH, arrM] = route.stops[route.stops.length-1].times[tripIndex].split(':').map(Number);
+            const arrSec = arrH * 3600 + arrM * 60;
+            
+            if (currentSec >= depSec && currentSec <= arrSec + 60) {
+                bus.style.display = 'block';
                 
-                this.currentSchedule = { direction, stopIndex };
-                this.updateSchedule(direction, stopIndex);
-                this.schedulePanel.style.display = 'block';
-            }
-            
-            hideSchedule() {
-                this.schedulePanel.style.display = 'none';
-            }
-            
-            updateScheduleIfVisible() {
-                if (this.schedulePanel.style.display === 'block' && this.currentSchedule) {
-                    const { direction, stopIndex } = this.currentSchedule;
-                    this.updateSchedule(direction, stopIndex);
+                const { position, currentStopName, nextStopInfo, isAtStop } = 
+                    this.calculateBusPosition(direction, tripIndex, currentSec);
+                
+                const point = this.getPointAtPercentage(direction, position);
+                const { x, y } = this.convertToPixelPosition(point.x, point.y);
+                
+                bus.style.transform = `translate(${x}px, ${y}px)`;
+
+                if (nextStopInfo || (isAtStop && currentStopName)) {
+                    activeBuses.push({ 
+                        isAtStop, 
+                        currentStopName, 
+                        nextStopInfo, 
+                        x: x + 4,
+                        y: y + 4,
+                        direction,
+                        tripIndex
+                    });
                 }
+            } else {
+                bus.style.display = 'none';
             }
-            
-            getPointAtPercentage(direction, percentage) {
-                const points = this.pathCache[direction];
-                const target = points.reduce((prev, curr) => 
-                    Math.abs(curr.percentage - percentage) < Math.abs(prev.percentage - percentage) ? curr : prev
-                );
+        });
+
+        if (activeBuses.length > 0) {
+            this.updateBusInfoPanel(direction, activeBuses);
+        } else {
+            this.removeBusInfoPanel(direction);
+        }
+    }
+    
+    calculateBusPosition(direction, tripIndex, currentSec) {
+        const route = ROUTE_DATA[direction];
+        let position = 0;
+        let currentStopName = "";
+        let nextStopInfo = null;
+        let isAtStop = false;
+
+        for (let i = 0; i < route.stops.length; i++) {
+            const stop = route.stops[i];
+            const [stopH, stopM] = stop.times[tripIndex].split(':').map(Number);
+            const stopSec = stopH * 3600 + stopM * 60;
+            const stopDuration = stop.stopDuration || 20;
+            const stopEndSec = stopSec + stopDuration;
+
+            if (currentSec >= stopSec && currentSec < stopEndSec) {
+                position = stop.position;
+                currentStopName = stop.hidden ? "" : stop.name;
+                isAtStop = true;
                 
-                return {
-                    x: target.x,
-                    y: target.y
-                };
+                const nextVisibleStop = this.findNextVisibleStop(route.stops, i + 1);
+                if (nextVisibleStop) {
+                    const [nextStopH, nextStopM] = nextVisibleStop.times[tripIndex].split(':').map(Number);
+                    nextStopInfo = {
+                        name: nextVisibleStop.name,
+                        arrivalTime: nextVisibleStop.times[tripIndex],
+                        minutesLeft: Math.ceil((nextStopH * 3600 + nextStopM * 60 - currentSec) / 60)
+                    };
+                }
+                break;
+            }
+            else if (i > 0) {
+                const prevStop = route.stops[i-1];
+                const [prevStopH, prevStopM] = prevStop.times[tripIndex].split(':').map(Number);
+                const prevStopEndSec = prevStopH * 3600 + prevStopM * 60 + (prevStop.stopDuration || 20);
+                
+                if (currentSec >= prevStopEndSec && currentSec < stopSec) {
+                    const progress = (currentSec - prevStopEndSec) / (stopSec - prevStopEndSec);
+                    position = prevStop.position + (stop.position - prevStop.position) * progress;
+                    
+                    const nextVisibleStop = this.findNextVisibleStop(route.stops, i);
+                    if (nextVisibleStop) {
+                        const [nextStopH, nextStopM] = nextVisibleStop.times[tripIndex].split(':').map(Number);
+                        nextStopInfo = {
+                            name: nextVisibleStop.name,
+                            arrivalTime: nextVisibleStop.times[tripIndex],
+                            minutesLeft: Math.ceil((nextStopH * 3600 + nextStopM * 60 - currentSec) / 60)
+                        };
+                    }
+                    break;
+                }
             }
         }
+        
+        return { position, currentStopName, nextStopInfo, isAtStop };
+    }
+    
+    findNextVisibleStop(stops, startIndex) {
+        for (let i = startIndex; i < stops.length; i++) {
+            if (!stops[i].hidden) return stops[i];
+        }
+        return null;
+    }
+    
+    updateBusInfoPanel(direction, activeBuses) {
+        let infoPanel = this.overlayContainer.querySelector(`.${direction}-info`);
+        if (!infoPanel) {
+            infoPanel = document.createElement('div');
+            infoPanel.className = `stop-info ${direction}-info`;
+            this.overlayContainer.appendChild(infoPanel);
+        }
+
+        let content = `<div class="route-title">Маршрут ${direction === 'forward' ? 'Бронницы → МЦД Отдых' : 'МЦД Отдых → Бронницы'}</div>`;
+        
+        activeBuses.forEach((bus, index) => {
+            if (index > 0) content += '<hr class="bus-separator">';
+            
+            if (bus.isAtStop && bus.currentStopName) {
+                content += `
+                    <div class="bus-info">
+                        <div class="stop-time">${bus.currentStopName}</div>
+                        <div class="stop-eta">${bus.nextStopInfo ? 
+                            `Следующая: ${bus.nextStopInfo.name} в ${bus.nextStopInfo.arrivalTime}` : 'Конечная'}</div>
+                    </div>
+                `;
+            } else if (bus.nextStopInfo) {
+                content += `
+                    <div class="bus-info">
+                        <div class="stop-time">Следующая: ${bus.nextStopInfo.name}</div>
+                        <div class="stop-eta">Прибытие в ${bus.nextStopInfo.arrivalTime} (через ${bus.nextStopInfo.minutesLeft} мин)</div>
+                    </div>
+                `;
+            }
+        });
+
+        infoPanel.innerHTML = content;
+        
+        // Обновляем стрелки
+        activeBuses.forEach(bus => {
+            this.updateArrow(direction, bus.tripIndex, infoPanel, bus.x, bus.y);
+        });
+    }
+    
+    removeBusInfoPanel(direction) {
+        const infoPanel = this.overlayContainer.querySelector(`.${direction}-info`);
+        if (infoPanel) infoPanel.remove();
+    }
+    
+    updateArrow(direction, tripIndex, fromElement, toX, toY) {
+        let arrow = this.arrows.find(a => 
+            a.dataset.direction === direction && a.dataset.tripIndex == tripIndex
+        );
+
+        if (!arrow) {
+            arrow = this.createArrow(fromElement, toX, toY);
+            arrow.dataset.direction = direction;
+            arrow.dataset.tripIndex = tripIndex;
+            this.arrows.push(arrow);
+        } else {
+            this.positionArrow(arrow, fromElement, toX, toY);
+        }
+    }
+    
+    createArrow(fromElement, toX, toY) {
+        const fromRect = fromElement.getBoundingClientRect();
+        const mapRect = this.mapContainer.getBoundingClientRect();
+        
+        const fromX = fromRect.left + fromRect.width / 2 - mapRect.left;
+        const fromY = fromRect.top + fromRect.height / 2 - mapRect.top;
+        
+        const dx = toX - fromX;
+        const dy = toY - fromY;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        
+        const arrow = document.createElement('div');
+        arrow.className = 'arrow-line';
+        arrow.style.cssText = `
+            width: ${length}px;
+            left: ${fromX}px;
+            top: ${fromY}px;
+            transform: rotate(${angle}deg);
+            background-color: rgba(0,0,0,0.3);
+            height: 2px;
+            position: absolute;
+            transform-origin: 0 50%;
+        `;
+        
+        this.overlayContainer.appendChild(arrow);
+        return arrow;
+    }
+    
+    positionArrow(arrow, fromElement, toX, toY) {
+        const fromRect = fromElement.getBoundingClientRect();
+        const mapRect = this.mapContainer.getBoundingClientRect();
+        
+        const fromX = fromRect.left + fromRect.width / 2 - mapRect.left;
+        const fromY = fromRect.top + fromRect.height / 2 - mapRect.top;
+        
+        const dx = toX - fromX;
+        const dy = toY - fromY;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        
+        arrow.style.width = `${length}px`;
+        arrow.style.left = `${fromX}px`;
+        arrow.style.top = `${fromY}px`;
+        arrow.style.transform = `rotate(${angle}deg)`;
+    }
+
+    getPointAtPercentage(direction, percentage) {
+        const points = this.pathCache[direction];
+        if (!points?.length) return { x: 0, y: 0 };
+        
+        const target = points.reduce((prev, curr) => 
+            Math.abs(curr.percentage - percentage) < Math.abs(prev.percentage - percentage) ? curr : prev
+        );
+        
+        return target || points[0];
+    }
+
+    showSchedule(direction, stopIndex) {
+        const stop = ROUTE_DATA[direction].stops[stopIndex];
+        if (stop.hidden) return;
+        
+        this.currentSchedule = { direction, stopIndex };
+        this.updateSchedule(direction, stopIndex);
+        this.schedulePanel.style.display = 'block';
+    }
+    
+    updateSchedule(direction, stopIndex) {
+        const stop = ROUTE_DATA[direction].stops[stopIndex];
+        const now = new Date();
+        const currentSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+        this.scheduleTitle.textContent = `${stop.name} → ${direction === 'forward' ? 'МЦД Отдых' : 'Бронницы'}`;
+        this.scheduleTimes.innerHTML = '';
+
+        let nextTrip = null;
+        stop.times.forEach((time, index) => {
+            const [h, m] = time.split(':').map(Number);
+            const timeSec = h * 3600 + m * 60;
+            const stopDuration = stop.stopDuration || 20;
+            const isPast = currentSec > timeSec + stopDuration;
+            const isCurrent = currentSec >= timeSec && currentSec <= timeSec + stopDuration;
+
+            if (!nextTrip && timeSec > currentSec) {
+                nextTrip = { time, minutesLeft: Math.ceil((timeSec - currentSec) / 60) };
+            }
+
+            const timeElement = document.createElement('div');
+            timeElement.className = `schedule-item ${isPast ? 'past-time' : isCurrent ? 'current-time' : 'future-time'}`;
+            timeElement.textContent = `${time} ${isCurrent ? '(сейчас)' : ''}`;
+            this.scheduleTimes.appendChild(timeElement);
+        });
+
+        this.nextBusInfo.textContent = nextTrip 
+            ? `Следующий автобус через ${this.formatTimeLeft(nextTrip.minutesLeft)} (в ${nextTrip.time})`
+            : 'Рейсы на сегодня завершены';
+    }
+    
+    formatTimeLeft(minutes) {
+        if (minutes >= 60) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours} ${this.pluralize(hours, 'час', 'часа', 'часов')}${mins ? ` ${mins} ${this.pluralize(mins, 'минуту', 'минуты', 'минут')}` : ''}`;
+        }
+        return `${minutes} ${this.pluralize(minutes, 'минуту', 'минуты', 'минут')}`;
+    }
+    
+    pluralize(n, one, few, many) {
+        n = Math.abs(n) % 100;
+        const n1 = n % 10;
+        if (n > 10 && n < 20) return many;
+        if (n1 > 1 && n1 < 5) return few;
+        if (n1 === 1) return one;
+        return many;
+    }
+    
+    hideSchedule() {
+        this.schedulePanel.style.display = 'none';
+    }
+    
+    updateScheduleIfVisible() {
+        if (this.schedulePanel.style.display === 'block' && this.currentSchedule) {
+            const { direction, stopIndex } = this.currentSchedule;
+            this.updateSchedule(direction, stopIndex);
+        }
+    }
+    
+    destroy() {
+        cancelAnimationFrame(this.animationFrameId);
+        clearInterval(this.updateInterval);
+        clearTimeout(this.resizeTimeout);
+        window.removeEventListener('resize', this.handleResize);
+    }
+}
 
         document.addEventListener('DOMContentLoaded', () => new BusTracker());
     </script>
